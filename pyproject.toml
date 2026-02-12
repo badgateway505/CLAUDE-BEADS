@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claude-beads"
+version = "1.0.0"
+description = "Atomic task execution framework for long-running AI-assisted projects with Claude"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Beads Contributors"}
+]
+keywords = ["ai", "claude", "project-management", "workflow", "beads", "task-execution"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/badgateway505/CLAUDE-BEADS"
+Documentation = "https://github.com/badgateway505/CLAUDE-BEADS#readme"
+Repository = "https://github.com/badgateway505/CLAUDE-BEADS"
+Issues = "https://github.com/badgateway505/CLAUDE-BEADS/issues"
+
+[project.scripts]
+beads = "beads.cli.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/beads"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"src/beads/templates" = "beads/templates"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true

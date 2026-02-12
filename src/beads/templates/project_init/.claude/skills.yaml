@@ -1,0 +1,64 @@
+# Claude Beads Framework Skills
+
+skills:
+  beads:run:
+    file: beads-run.md
+    description: Execute the active bead from the ledger
+    aliases:
+      - execute-bead
+      - run-bead
+
+  beads:plan:
+    file: beads-plan.md
+    description: Decompose a phase into atomic beads
+    aliases:
+      - plan-phase
+
+  beads:research:
+    file: beads-research.md
+    description: Research technical approach before planning
+    aliases:
+      - research-phase
+
+  beads:resume:
+    file: beads-resume.md
+    description: Restore context and find next action
+    aliases:
+      - resume-project
+      - continue
+
+  beads:close-phase:
+    file: beads-close-phase.md
+    description: Close phase, freeze context, prepare for next
+    aliases:
+      - transition
+      - freeze-phase
+
+  beads:help:
+    file: beads-help.md
+    description: Show available Beads commands
+
+  # Additional skills (keeping existing functionality)
+  beads:new-milestone:
+    description: Create a new milestone with phases
+
+  beads:create-roadmap:
+    description: Create roadmap with phases for the project
+
+  beads:audit-system:
+    description: Internal framework audit with AI self-reflection
+
+  beads:map-codebase:
+    description: Analyze codebase with parallel Explore agents
+
+  beads:new-project:
+    description: Initialize a new project with context gathering
+
+  beads:discuss-phase:
+    description: Gather phase context through adaptive questioning
+
+  beads:discuss-milestone:
+    description: Gather milestone context through adaptive questioning
+
+  beads:complete-milestone:
+    description: Archive completed milestone and prepare for next version

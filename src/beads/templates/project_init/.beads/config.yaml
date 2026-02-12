@@ -1,0 +1,69 @@
+# Claude Beads Configuration
+# Project: [Your Project Name]
+
+# =============================================================================
+# MODEL ROUTING (Used by router.py)
+# =============================================================================
+models:
+  defaults:
+    architecture: "opus"
+    research: "opus"
+    implementation: "sonnet"
+    verification: "sonnet"
+    summarization: "haiku"
+
+  # Patterns that trigger Opus (case-insensitive regex)
+  opus_indicators:
+    - '\barchitecture\b'
+    - '\bdesign\b'
+    - '\bresearch\b'
+    - '\bplan\b'
+    - '\bstrategy\b'
+    - '\brefactor\b.*\bmultiple\b'
+    - '\brefactor\b.*\bsystem\b'
+    - '\bevaluate\b.*\balternatives?\b'
+    - '\bcompare\b.*\bapproaches?\b'
+    - '\boptimize\b.*\barchitecture\b'
+    - '\bmigration\b'
+    - '\bframework\b'
+
+  # Patterns that trigger Haiku (case-insensitive regex)
+  haiku_indicators:
+    - '\bsummarize\b'
+    - '\bupdate\b.*\bledger\b'
+    - '\bformat\b'
+    - '\btypo\b'
+    - '\brename\b.*\bvariable\b'
+    - '\badd\b.*\bcomment\b'
+    - '\bfix\b.*\bformatting\b'
+
+# =============================================================================
+# TEST MAPPING (Used by router.py for surgical verification)
+# =============================================================================
+testing:
+  tests_dir: "tests/"
+  critical_path: "tests/critical/"
+  default_cmd: "pytest {tests} -v --tb=short"
+  surgical: true
+
+  # Source-to-test mapping (regex patterns)
+  # Example:
+  # test_map:
+  #   'src/myapp/models\.py$': 'tests/test_models.py'
+  #   'src/myapp/views\.py$': 'tests/test_views.py'
+  test_map: {}
+
+# =============================================================================
+# FSM SETTINGS (Used by fsm.py)
+# =============================================================================
+fsm:
+  max_retries: 3
+  soft_retry_threshold: 1   # Attempt 1: soft retry
+  hard_rollback_threshold: 2 # Attempt 2: hard rollback
+  # Attempt 3: circuit breaker (stop, request human)
+
+# =============================================================================
+# LEDGER (Used by fsm.py and router.py)
+# =============================================================================
+ledger:
+  path: ".beads/ledger.md"
