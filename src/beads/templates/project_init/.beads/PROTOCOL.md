@@ -42,17 +42,17 @@ Claude CANNOT modify `ledger.md`, `fsm-state.json`, or hook scripts directly.
     &nbsp;&nbsp;- If shows **PENDING** → Proceed immediately to step 3  
     &nbsp;&nbsp;- If shows **None** → Check if project is complete, or manually scan for next bead
 
-3. **FSM Init (auto-transitions to EXECUTE):** Execute silently. Report: "✅ Initialized & ready"  
-    &nbsp;&nbsp;- Model guard check (**IRON LOCK**) — halts if model mismatch  
-    &nbsp;&nbsp;- Phase boundary checks (**HARD LOCKS**) — halts if phase not closed or unplanned  
+3. **FSM Init (auto-transitions to EXECUTE):** Execute silently. Report: "✅ Initialized & ready"
+    &nbsp;&nbsp;- Model guard check (**IRON LOCK**) — halts if model mismatch
+    &nbsp;&nbsp;- Phase boundary checks (**Phase Guard**) — halts if phase not closed or unplanned
     &nbsp;&nbsp;- Auto-transitions to EXECUTE (no manual transition needed)
 
-    **⛔ ERROR CHECKING REQUIRED:**  
-    After running FSM command, check output for error markers:  
-    &nbsp;&nbsp;- `🚨 HARD LOCK` → STOP IMMEDIATELY, show user error, do not continue  
-    &nbsp;&nbsp;- `✗ HARD LOCK` → STOP IMMEDIATELY, show user error, do not continue  
-    &nbsp;&nbsp;- `⛔ Execution BLOCKED` → STOP IMMEDIATELY, show user error, do not continue  
-    &nbsp;&nbsp;- Exit code non-zero → read error, STOP, show user what’s required
+    **⛔ ERROR CHECKING REQUIRED:**
+    After running FSM command, check output for error markers:
+    &nbsp;&nbsp;- `🛡️ Phase Guard` → STOP IMMEDIATELY, show user error, do not continue
+    &nbsp;&nbsp;- `🔒 IRON LOCK` → STOP IMMEDIATELY, show user error, do not continue
+    &nbsp;&nbsp;- `⛔ Execution BLOCKED` → STOP IMMEDIATELY, show user error, do not continue
+    &nbsp;&nbsp;- Exit code non-zero → read error, STOP, show user what's required
 
     If blocked: Copy FSM error to user, explain required action, STOP execution.  
     &nbsp;&nbsp;- Ledger auto-synced  
@@ -148,7 +148,7 @@ When last bead in a phase completes, FSM will display:
 
 ⚠️   **Do not** proceed to next phase without freezing!
 
-**Phase Boundary Protection (HARD LOCKS):**
+**Phase Boundary Protection (Phase Guard):**
 - Cannot execute Phase N+1 if Phase N is not CLOSED in ledger
 - Cannot execute Phase N if bead files don't exist in `.planning/phases/XX-*/`
 - FSM will BLOCK execution with a clear error message
@@ -239,8 +239,8 @@ _Simplified workflow (reduced ceremony):_
 Enforced by FSM and hooks; cannot be bypassed:
 - 🔒 Modify framework files directly — **STATE GUARD** (Edit/Write/Bash blocked)
 - 🔒 Skip model guard — **IRON LOCK** (--active-model must match)
-- 🔒 Execute next phase without closing previous — **HARD LOCK** (prior phase must be CLOSED)
-- 🔒 Execute unplanned phase — **HARD LOCK** (bead files must exist)
+- 🔒 Execute next phase without closing previous — **Phase Guard** (prior phase must be CLOSED)
+- 🔒 Execute unplanned phase — **Phase Guard** (bead files must exist)
 
 **Actions Requiring Documented Rationale**  
 Avoid by default; exception allowed if rationale is documented:
