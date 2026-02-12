@@ -4,20 +4,25 @@ Execute the currently active bead from the ledger.
 
 **Usage:** `/beads:run`
 
-**Prerequisites:**
-- Must run `/clear` first (HARD LOCK requirement)
-- Active bead must be set in `.beads/ledger.md`
+**Tip:** Run `/clear` before each bead for optimal token efficiency (not enforced).
 
 **What it does:**
-1. Checks that `/clear` was run (HARD LOCK)
-2. Reads `.beads/ledger.md` for active bead
-3. Executes bead via simplified FSM protocol (init → work → verify)
-4. Auto-queues next pending bead when verification passes
+1. Reads `.beads/ledger.md` for active bead
+2. Runs FSM init (validates model, dependencies)
+3. Executes bead tasks
+4. Runs FSM verify (tests/checklist per verification tier)
+5. Commits atomically
 
-**When to use:**
-- After `/clear`, to execute the next bead in the workflow
-- When continuing work on a phase
+**FSM Commands:**
+```bash
+# Initialize (model guard enforced, dependencies checked)
+python3 .beads/bin/fsm.py init <bead-id> --active-model <model> --bead <path>
 
-**Related commands:**
-- `/beads:plan` - Plan a phase into beads (before running)
-- `/beads:resume` - Restore project context after break
+# After completing tasks, verify
+python3 .beads/bin/fsm.py verify "<verification_cmd>"
+```
+
+**If FSM blocks you:** STOP. Show user the error. Do not attempt to bypass.
+The BEADS State Guard prevents direct manipulation of framework files.
+
+**Related:** `/beads:plan`, `/beads:resume`

@@ -5,11 +5,12 @@ Decompose a phase into atomic, model-optimized beads.
 **Usage:** `/beads:plan [phase-id]`
 
 **What it does:**
-1. Reads phase OVERVIEW.md and CONTEXT.md
-2. Decomposes work into 3-7 atomic beads
-3. Creates bead files in `.planning/phases/XX-*/beads/`
-4. Updates ledger with new beads
-5. Sets first bead as active
+1. Verifies previous phase is CLOSED (if applicable)
+2. Reads phase OVERVIEW.md and CONTEXT.md
+3. Decomposes work into 3-7 atomic beads
+4. Creates bead files in `.planning/phases/XX-*/beads/`
+5. Updates ledger with new beads
+6. Sets first bead as active
 
 **Output:**
 - Bead files (XML-structured) in beads/ directory
