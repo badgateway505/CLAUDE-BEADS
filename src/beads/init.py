@@ -64,6 +64,26 @@ def _copy_templates(project_root: Path):
     shutil.copy2(claude_src / "skills.yaml", claude_dst / "skills.yaml")
     shutil.copytree(claude_src / "skills", claude_dst / "skills", dirs_exist_ok=True)
 
+    # Copy .claude/hooks/ (State Guard)
+    hooks_src = claude_src / "hooks"
+    hooks_dst = claude_dst / "hooks"
+    if hooks_src.exists():
+        shutil.copytree(hooks_src, hooks_dst, dirs_exist_ok=True)
+        # Make hook scripts executable
+        for hook in hooks_dst.glob("*.sh"):
+            hook.chmod(0o755)
+
+    # Copy .claude/settings.json (hook registration)
+    settings_src = claude_src / "settings.json"
+    settings_dst = claude_dst / "settings.json"
+    if settings_src.exists():
+        if not settings_dst.exists():
+            shutil.copy2(settings_src, settings_dst)
+        else:
+            # Settings already exists - user should manually merge hook config
+            print("⚠️  .claude/settings.json already exists - hook config not merged automatically")
+            print("    Copy hook registration from template if needed")
+
     # Create .planning/ directory (empty for now)
     planning_dst = project_root / ".planning"
     planning_dst.mkdir(exist_ok=True)
@@ -176,7 +196,7 @@ def _update_claude_md(project_root: Path, project_name: str):
     claude_md = project_root / "CLAUDE.md"
 
     beads_section = """
-## 🧠 Beads Workflow
+## 🧠 Beads Workflow (Beads v2.0)
 
 **When executing beads, read `.beads/PROTOCOL.md` for the full execution protocol.**
 
@@ -198,9 +218,7 @@ def _update_claude_md(project_root: Path, project_name: str):
 - Use `XX-SUMMARY.md` for frozen phases
 - Never read `.claudeignore` files
 
----
-
-*Built with [Claude Beads](https://github.com/badgateway505/CLAUDE-BEADS) - Atomic task execution for AI projects*
+      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
 """
 
     if claude_md.exists():
