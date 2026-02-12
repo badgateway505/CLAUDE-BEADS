@@ -12,7 +12,7 @@ Core responsibilities:
   - Circuit breaker retry strategy
 
 Usage:
-    python fsm.py init <bead_id> [--confirm-clear] [--active-model MODEL] [--bead PATH]
+    python fsm.py init <bead_id> [--active-model MODEL] [--bead PATH]
     python fsm.py transition <state>
     python fsm.py verify <verification_cmd>
     python fsm.py rollback
@@ -156,19 +156,61 @@ class BeadFSM:
         verification_cmd: Optional[str] = None,
         model: Optional[str] = None,
         active_model: Optional[str] = None,
-        bead_path: Optional[str] = None,
-        confirm_clear: bool = False
+        bead_path: Optional[str] = None
     ) -> None:
         """
         Initialize FSM for new bead execution.
 
-        HARD LOCK: confirm_clear must be True.
         IRON LOCK: active_model must match bead's required model.
         """
-        # HARD LOCK
-        if not confirm_clear:
-            print(f"✗ HARD LOCK: /clear required before bead execution")
-            print(f"  Run /clear, then retry with --confirm-clear")
+        # HARD LOCK #1: Phase boundary protection
+        current_phase = self._extract_phase_number(bead_id)
+        if current_phase and int(current_phase) > 1:
+            prev_phase = f"{int(current_phase) - 1:02d}"
+            ledger_content = self.LEDGER_FILE.read_text() if self.LEDGER_FILE.exists() else ""
+
+            # Check if previous phase is closed
+            if not self._is_phase_closed(ledger_content, prev_phase):
+                print("")
+                print("=" * 65)
+                print(f"🚨 HARD LOCK: PHASE BOUNDARY VIOLATION 🚨")
+                print("=" * 65)
+                print("")
+                print(f"Phase {prev_phase} is NOT CLOSED yet.")
+                print("")
+                print("You MUST close the previous phase before starting a new one:")
+                print("  → /beads:close-phase")
+                print("")
+                print("Why this matters:")
+                print("- Creates {prev_phase}-SUMMARY.md for context isolation")
+                print("- Prevents stale context bleeding into new phase")
+                print("- Marks phase complete in ledger")
+                print("")
+                print("⛔ Execution BLOCKED until previous phase closed")
+                print("=" * 65)
+                print("")
+                sys.exit(1)
+
+        # HARD LOCK #3: Unplanned phase detection
+        if current_phase and not self._phase_beads_exist(current_phase):
+            print("")
+            print("=" * 65)
+            print(f"🚨 HARD LOCK: UNPLANNED PHASE DETECTED 🚨")
+            print("=" * 65)
+            print("")
+            print(f"Next bead would be: {bead_id}")
+            print(f"Status: BEAD FILES NOT FOUND")
+            print("")
+            print(f"Phase {current_phase} has NOT been planned yet.")
+            print("")
+            print("You MUST plan the phase first:")
+            print(f"  → /beads:plan phase-{current_phase}")
+            print("")
+            print("Cannot execute beads that don't exist!")
+            print("")
+            print("⛔ Execution BLOCKED until phase planned")
+            print("=" * 65)
+            print("")
             sys.exit(1)
 
         # Check dependencies
@@ -228,6 +270,7 @@ class BeadFSM:
         )
         self._save_state()
         print(f"✓ FSM initialized: Bead-{bead_id} ({initial_sha[:8]})")
+        print(f"ℹ️  Tip: Run /clear before each bead for optimal token efficiency")
         if bead_type == "spike":
             print(f"  ⚡ Spike bead (exploration mode - no verification required)")
         if verification_tier != "AUTO":
@@ -246,6 +289,46 @@ class BeadFSM:
         print(f"✓ Auto-transitioned to EXECUTE")
 
         self.sync_ledger()
+
+    def _extract_phase_number(self, bead_id: str) -> Optional[str]:
+        """Extract phase number from bead ID (e.g., '01-03' -> '01')."""
+        match = re.match(r'(\d{2})-\d{2}', bead_id)
+        return match.group(1) if match else None
+
+    def _is_phase_closed(self, ledger_content: str, phase_num: str) -> bool:
+        """Check if phase is marked as CLOSED in ledger."""
+        pattern = rf'Phase {phase_num}.*?:.*?CLOSED'
+        return bool(re.search(pattern, ledger_content, re.IGNORECASE))
+
+    def _is_last_bead_in_phase(self, current_bead_id: str, ledger_content: str) -> bool:
+        """Check if current bead is the last in its phase."""
+        current_phase = self._extract_phase_number(current_bead_id)
+        if not current_phase:
+            return False
+
+        # Find next pending bead
+        next_bead = self._find_next_pending_bead(ledger_content)
+        if not next_bead:
+            # No more pending beads
+            return True
+
+        next_phase = self._extract_phase_number(next_bead)
+        # If next bead is in a different phase, current is last in phase
+        return next_phase != current_phase
+
+    def _phase_beads_exist(self, phase_num: str) -> bool:
+        """Check if beads exist for given phase in .planning/phases/."""
+        planning_dir = Path(".planning/phases")
+        if not planning_dir.exists():
+            return False
+
+        # Look for phase directories matching pattern
+        for phase_dir in planning_dir.iterdir():
+            if phase_dir.is_dir() and phase_dir.name.startswith(f"{phase_num}-"):
+                # Check if any .md files exist (bead files)
+                bead_files = list(phase_dir.glob(f"{phase_num}-*.md"))
+                return len(bead_files) > 0
+        return False
 
     def _find_next_pending_bead(self, ledger_content: str) -> Optional[str]:
         """Find first pending bead in ledger."""
@@ -285,6 +368,25 @@ class BeadFSM:
         # Update Active Bead section
         if state in ['complete', 'failed']:
             next_bead = self._find_next_pending_bead(content)
+
+            # Check for phase completion
+            if state == 'complete' and self._is_last_bead_in_phase(bead_id, content):
+                current_phase = self._extract_phase_number(bead_id)
+                print("")
+                print("=" * 65)
+                print(f"🎉🎉🎉 PHASE {current_phase} COMPLETE! 🎉🎉🎉")
+                print("=" * 65)
+                print("")
+                print(f"✅ All beads in Phase {current_phase} verified and committed")
+                print(f"📦 Phase ready to freeze")
+                print("")
+                print("➡️  REQUIRED NEXT STEP:")
+                print("   /beads:close-phase")
+                print("")
+                print("⚠️  DO NOT proceed to next phase without freezing this one first!")
+                print("=" * 65)
+                print("")
+
             if next_bead:
                 new_active = f"## Active Bead\n\n**Bead-{next_bead}**: PENDING\n"
                 print(f"✓ Auto-queued: Bead-{next_bead}")
@@ -485,7 +587,7 @@ def main():
     try:
         if command == "init":
             if len(sys.argv) < 3:
-                print("Usage: fsm.py init <bead_id> --confirm-clear [--active-model MODEL] [--bead PATH]")
+                print("Usage: fsm.py init <bead_id> [--active-model MODEL] [--bead PATH]")
                 sys.exit(1)
 
             bead_id = sys.argv[2]
@@ -493,7 +595,6 @@ def main():
             model = None
             active_model = None
             bead_path = None
-            confirm_clear = False
 
             i = 3
             while i < len(sys.argv):
@@ -509,13 +610,10 @@ def main():
                 elif sys.argv[i] == "--bead" and i + 1 < len(sys.argv):
                     bead_path = sys.argv[i + 1]
                     i += 2
-                elif sys.argv[i] == "--confirm-clear":
-                    confirm_clear = True
-                    i += 1
                 else:
                     i += 1
 
-            fsm.init(bead_id, verification_cmd, model, active_model, bead_path, confirm_clear)
+            fsm.init(bead_id, verification_cmd, model, active_model, bead_path)
 
         elif command == "transition":
             if len(sys.argv) < 3:
