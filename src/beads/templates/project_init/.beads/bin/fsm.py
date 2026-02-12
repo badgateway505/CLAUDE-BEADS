@@ -163,7 +163,7 @@ class BeadFSM:
 
         IRON LOCK: active_model must match bead's required model.
         """
-        # HARD LOCK #1: Phase boundary protection
+        # Phase Guard: Phase boundary protection
         current_phase = self._extract_phase_number(bead_id)
         if current_phase and int(current_phase) > 1:
             prev_phase = f"{int(current_phase) - 1:02d}"
@@ -173,7 +173,7 @@ class BeadFSM:
             if not self._is_phase_closed(ledger_content, prev_phase):
                 print("")
                 print("=" * 65)
-                print(f"🚨 HARD LOCK: PHASE BOUNDARY VIOLATION 🚨")
+                print(f"🛡️ Phase Guard: Phase Boundary Violation 🛡️")
                 print("=" * 65)
                 print("")
                 print(f"Phase {prev_phase} is NOT CLOSED yet.")
@@ -191,11 +191,11 @@ class BeadFSM:
                 print("")
                 sys.exit(1)
 
-        # HARD LOCK #3: Unplanned phase detection
+        # Phase Guard: Unplanned phase detection
         if current_phase and not self._phase_beads_exist(current_phase):
             print("")
             print("=" * 65)
-            print(f"🚨 HARD LOCK: UNPLANNED PHASE DETECTED 🚨")
+            print(f"🛡️ Phase Guard: Unplanned Phase Detected 🛡️")
             print("=" * 65)
             print("")
             print(f"Next bead would be: {bead_id}")
