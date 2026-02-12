@@ -8,7 +8,7 @@ Close current phase, promote issues, and freeze context.
 1. Verifies all beads in current phase are complete
 2. Creates XX-SUMMARY.md for frozen phase
 3. Adds detailed files to `.claudeignore`
-4. Updates ledger status
+4. Marks phase as CLOSED in ledger (enables phase boundary protection)
 5. Prepares for next phase
 
 **Output:**
