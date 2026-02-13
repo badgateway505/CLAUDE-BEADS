@@ -1,5 +1,5 @@
 #!/bin/bash
-# PreToolUse hook for Edit|Write — enforce active bead requirement
+# PreToolUse hook for Edit|Write|NotebookEdit — enforce active bead requirement
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
@@ -13,7 +13,7 @@ if [[ "$FILE_PATH" == *"README"* ]] || [[ "$FILE_PATH" == *"LICENSE"* ]] || [[ "
   exit 0
 fi
 
-# For project source files, require active bead
+# For project source files, require active bead in EXECUTE state
 if [[ ! -f ".beads/fsm-state.json" ]]; then
   echo "BLOCK: No active bead. You must initialize a bead before editing project files." >&2
   echo "" >&2
@@ -23,6 +23,17 @@ if [[ ! -f ".beads/fsm-state.json" ]]; then
   echo "  - Phase boundaries are respected (previous phase closed)" >&2
   echo "  - Model guard is enforced (correct model for task)" >&2
   echo "  - Work is tracked in ledger" >&2
+  exit 2
+fi
+
+# Validate fsm-state.json is in EXECUTE state (not stale from a previous bead)
+FSM_STATE=$(jq -r '.current_state // empty' .beads/fsm-state.json 2>/dev/null)
+if [[ "$FSM_STATE" != "execute" ]]; then
+  echo "BLOCK: FSM state is '$FSM_STATE', not 'execute'. Stale or invalid state detected." >&2
+  echo "" >&2
+  echo "If a bead completed, the state file should have been removed." >&2
+  echo "Run: python3 .beads/bin/fsm.py status  (to inspect)" >&2
+  echo "Run: python3 .beads/bin/fsm.py rollback (to reset)" >&2
   exit 2
 fi
 
