@@ -12,7 +12,7 @@ Core responsibilities:
   - Circuit breaker retry strategy
 
 Usage:
-    python fsm.py init <bead_id> [--confirm-clear] [--active-model MODEL] [--bead PATH]
+    python fsm.py init <bead_id> [--active-model MODEL] [--bead PATH]
     python fsm.py transition <state>
     python fsm.py verify <verification_cmd>
     python fsm.py rollback
@@ -157,20 +157,12 @@ class BeadFSM:
         model: Optional[str] = None,
         active_model: Optional[str] = None,
         bead_path: Optional[str] = None,
-        confirm_clear: bool = False
     ) -> None:
         """
         Initialize FSM for new bead execution.
 
-        HARD LOCK: confirm_clear must be True.
         IRON LOCK: active_model must match bead's required model.
         """
-        # HARD LOCK
-        if not confirm_clear:
-            print(f"✗ HARD LOCK: /clear required before bead execution")
-            print(f"  Run /clear, then retry with --confirm-clear")
-            sys.exit(1)
-
         # Check dependencies
         if bead_path and not self._check_dependencies_simple(bead_path):
             sys.exit(1)
@@ -485,7 +477,7 @@ def main():
     try:
         if command == "init":
             if len(sys.argv) < 3:
-                print("Usage: fsm.py init <bead_id> --confirm-clear [--active-model MODEL] [--bead PATH]")
+                print("Usage: fsm.py init <bead_id> [--active-model MODEL] [--bead PATH]")
                 sys.exit(1)
 
             bead_id = sys.argv[2]
@@ -493,7 +485,6 @@ def main():
             model = None
             active_model = None
             bead_path = None
-            confirm_clear = False
 
             i = 3
             while i < len(sys.argv):
@@ -509,13 +500,10 @@ def main():
                 elif sys.argv[i] == "--bead" and i + 1 < len(sys.argv):
                     bead_path = sys.argv[i + 1]
                     i += 2
-                elif sys.argv[i] == "--confirm-clear":
-                    confirm_clear = True
-                    i += 1
                 else:
                     i += 1
 
-            fsm.init(bead_id, verification_cmd, model, active_model, bead_path, confirm_clear)
+            fsm.init(bead_id, verification_cmd, model, active_model, bead_path)
 
         elif command == "transition":
             if len(sys.argv) < 3:
