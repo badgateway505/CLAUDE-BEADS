@@ -127,11 +127,12 @@ rationale: "Temporary workaround until M5Stack releases fixed I2S driver (expect
 
 ## When NOT to Use Rationale
 
-**Hard locks cannot be bypassed** (even with rationale):
-- Executing bead without `/clear` (HARD LOCK)
+**Guards that cannot be bypassed** (even with rationale):
 - Model mismatch when FSM enforces model guard (IRON LOCK)
+- Phase boundary violations (Phase Guard — enforced by workflow-guard.sh hook)
+- Framework file modifications (State Guard — enforced by protect-files.sh hook)
 
-These are enforced by FSM code and require code changes to bypass, not just rationale documentation.
+These are physically enforced by Claude Code hooks and FSM code.
 
 ---
 

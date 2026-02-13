@@ -75,7 +75,7 @@ Registered in `.claude/skills.yaml` with command aliases.
 
 The original GSD methodology provided the foundation, but this framework includes custom innovations:
 
-1. **HARD LOCK** - `/clear` requirement before bead execution
+1. **State Guard** - Hook-based physical enforcement of framework file integrity
 2. **IRON LOCK** - Model guard enforcement via FSM
 3. **Next-In-Line Protocol** - Auto-queue next pending bead
 4. **XML-structured beads** - Machine-readable templates

@@ -36,10 +36,9 @@
    - Managed by FSM in normal workflow
    - Exceptions allowed with documented rationale (e.g., emergency architecture pivots)
 
-4. **Always run /clear before /beads:run**
+4. **Run /clear before /beads:run** (recommended)
    - Keeps context clean
    - Prevents token waste
-   - HARD LOCK enforced by FSM
 
 ## Bead Types
 
@@ -67,8 +66,7 @@
 → Usually means: plan next phase or transition
 
 **"Context not clear"**
-→ Run `/clear` before `/beads:run`
-→ This is required by HARD LOCK
+→ Run `/clear` before `/beads:run` (recommended for token efficiency)
 
 ## Need Help?
 
