@@ -3,8 +3,9 @@
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
-# Phase planning guard: writing to .planning/phases/ requires .plan-ready flag
-if [[ "$FILE_PATH" == *".planning/phases/"* ]]; then
+# Phase planning guard: writing phase OVERVIEW files requires .plan-ready flag
+# Bead files (.planning/phases/XX/beads/*.md) are exempt — they are created by /beads:plan phase-XX
+if [[ "$FILE_PATH" == *".planning/phases/"* ]] && [[ "$FILE_PATH" != *"/beads/"* ]]; then
   if [[ ! -f ".beads/.plan-ready" ]]; then
     echo "BLOCK: Cannot write to .planning/phases/ without project validation." >&2
     echo "" >&2
