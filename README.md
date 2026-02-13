@@ -2,7 +2,7 @@
 
 # 🧵 Claude Beads v1.1
 
-### Finish real projects with Claude — NO context loss, NO tokens overspend, NO rules bypass.
+### STOP context loss, token burn, rules bypass.
 
 **Physical enforcement framework for atomic AI-assisted development**
 
