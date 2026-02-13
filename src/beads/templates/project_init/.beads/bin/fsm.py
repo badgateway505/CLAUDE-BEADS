@@ -110,9 +110,16 @@ class BeadFSM:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             capture_output=True,
-            text=True,
-            check=True
+            text=True
         )
+        if result.returncode != 0:
+            print("✗ Git repository not initialized.")
+            print("")
+            print("  Run these commands first:")
+            print("    git init")
+            print("    git add .")
+            print("    git commit -m 'chore: initial commit'")
+            sys.exit(1)
         return result.stdout.strip()
 
     def _check_dependencies_simple(self, bead_path: str) -> bool:
