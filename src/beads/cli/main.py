@@ -26,7 +26,7 @@ def cli():
 
 @cli.command()
 @click.option('--project-name', prompt='Project name', help='Name of your project')
-@click.option('--vision', prompt='What are you building? (elevator pitch)', help='One-paragraph project description')
+@click.option('--vision', prompt='What is this project? (describe it fully — what it does, who it\'s for, why it matters)', help='Full project description')
 @click.option('--goals', prompt='What does "done" look like? (end goal / MVP target)', help='Success criteria and deliverables')
 @click.option('--yes', '-y', is_flag=True, default=False, help='Skip confirmation prompts (for non-interactive use)')
 def init(project_name: str, vision: str, goals: str, yes: bool):
@@ -50,9 +50,9 @@ def init(project_name: str, vision: str, goals: str, yes: bool):
         initialize_project(project_root, project_name, vision, goals)
         console.print("\n[green]✅ Beads initialized successfully![/green]")
         console.print("\n[bold]Next steps:[/bold]")
-        console.print("  1. Review [cyan].planning/PROJECT.md[/cyan] and [cyan].beads/ledger.json[/cyan]")
-        console.print("  2. In Claude Code, run: [cyan]/beads:plan-project[/cyan] to create your phase roadmap")
-        console.print("  3. Then: [cyan]/beads:plan phase-01[/cyan] to decompose first phase into beads")
+        console.print("  1. Run [cyan]claude[/cyan] to open Claude Code in this directory")
+        console.print("  2. [bold]New project[/bold]      → [cyan]/beads:plan-project[/cyan]")
+        console.print("     [bold]Existing project[/bold] → [cyan]/beads:onboard[/cyan] → [cyan]/beads:plan-project[/cyan]")
         console.print("\n[dim]Documentation: .beads/README.md[/dim]")
     except Exception as e:
         console.print(f"[red]❌ Initialization failed: {e}[/red]")

@@ -24,19 +24,42 @@ If it fails, fix PROJECT.md before proceeding.
 
 Use the output from this command as your source data — do NOT re-read PROJECT.md separately.
 
-### Step 1: Read Additional Context
+### Step 1: Read Context and Run Guided Dialogue
 
-Read these files for extra context:
-
-1. `.planning/PROJECT.md` — full project doc (may have `## Current State` from `/beads:onboard`)
+Read these files:
+1. `.planning/PROJECT.md` — vision and goals from `beads init`
 2. `.beads/ledger.json` — current state
 3. `CLAUDE.md` — any existing project context
 
 **Key check:** Does PROJECT.md have a `## Current State` section?
-- **YES** → This is an existing project. The Current State section lists what's already built. Only plan phases for remaining work.
-- **NO** → This is a new project. Plan everything from scratch.
+- **YES** → Existing project. Only plan phases for remaining work.
+- **NO** → New project. Plan everything from scratch.
 
-Infer the best tech stack from the project description and goals (or use `## Tech Stack` if onboard already detected it). Include your stack recommendation in the phase plan for user confirmation.
+**Then run a step-by-step dialogue** — do NOT ask everything at once. Go one topic at a time, propose a sensible default based on the vision, and wait for the user to confirm or change it before moving on:
+
+**1. Goals**
+Propose 3-5 specific goals inferred from the vision. Example:
+> "Based on your description, I'd suggest these goals: [list]. Does this look right, or would you like to add/change anything?"
+
+Wait for reply, then move to next topic.
+
+**2. Success criteria**
+Propose what "done" looks like based on the confirmed goals:
+> "I'd define done as: [criteria]. Correct?"
+
+Wait for reply, then move to next topic.
+
+**3. Constraints**
+Ask briefly:
+> "Any technical or timeline constraints? (e.g. must use Python 3.11+, deploy by X date, no paid dependencies) — or just say 'none'."
+
+Wait for reply, then move to next topic.
+
+**4. Tech stack**
+Recommend the best stack for the project type, taking into account any constraints confirmed above. Be specific (e.g. "Python + Typer for CLI, SQLite for storage, Rich for terminal output"). Example:
+> "For a project like this, I'd recommend: [stack]. Does that work, or do you have a preference?"
+
+Wait for confirmation, then proceed to Step 2.
 
 ### Step 2: Generate Phase Roadmap
 
