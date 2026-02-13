@@ -1,7 +1,6 @@
 """Project initialization logic."""
 from pathlib import Path
 import shutil
-from importlib import resources
 from datetime import datetime
 
 
@@ -34,16 +33,16 @@ def initialize_project(project_root: Path, project_name: str, vision: str):
     # 6. Create .github attribution
     _create_github_attribution(project_root)
 
+    # 7. Verify mandatory files — fail loudly if anything is missing
+    _verify_init(project_root)
+
 
 def _copy_templates(project_root: Path):
     """Copy template directories from package to project."""
-    # Get package template directory
-    try:
-        template_root = resources.files("beads") / "templates" / "project_init"
-    except AttributeError:
-        # Fallback for Python < 3.9
-        import importlib_resources
-        template_root = importlib_resources.files("beads") / "templates" / "project_init"
+    template_root = Path(__file__).parent / "templates" / "project_init"
+
+    if not template_root.exists():
+        raise RuntimeError(f"Package templates not found at {template_root}. Reinstall claude-beads.")
 
     # Copy .beads/
     beads_src = template_root / ".beads"
@@ -64,29 +63,56 @@ def _copy_templates(project_root: Path):
     shutil.copy2(claude_src / "skills.yaml", claude_dst / "skills.yaml")
     shutil.copytree(claude_src / "skills", claude_dst / "skills", dirs_exist_ok=True)
 
-    # Copy .claude/hooks/ (State Guard)
+    # Copy .claude/hooks/ (State Guard) — mandatory, fail loudly if missing
     hooks_src = claude_src / "hooks"
+    if not hooks_src.exists():
+        raise RuntimeError(f"Hook scripts not found at {hooks_src}. Package may be corrupted — reinstall claude-beads.")
     hooks_dst = claude_dst / "hooks"
-    if hooks_src.exists():
-        shutil.copytree(hooks_src, hooks_dst, dirs_exist_ok=True)
-        # Make hook scripts executable
-        for hook in hooks_dst.glob("*.sh"):
-            hook.chmod(0o755)
+    shutil.copytree(hooks_src, hooks_dst, dirs_exist_ok=True)
+    for hook in hooks_dst.glob("*.sh"):
+        hook.chmod(0o755)
 
-    # Copy .claude/settings.json (hook registration)
+    # Copy .claude/settings.json (hook registration) — mandatory, fail loudly if missing
     settings_src = claude_src / "settings.json"
+    if not settings_src.exists():
+        raise RuntimeError(f"settings.json not found at {settings_src}. Package may be corrupted — reinstall claude-beads.")
     settings_dst = claude_dst / "settings.json"
-    if settings_src.exists():
-        if not settings_dst.exists():
-            shutil.copy2(settings_src, settings_dst)
-        else:
-            # Settings already exists - user should manually merge hook config
-            print("⚠️  .claude/settings.json already exists - hook config not merged automatically")
-            print("    Copy hook registration from template if needed")
+    if not settings_dst.exists():
+        shutil.copy2(settings_src, settings_dst)
+    else:
+        print("⚠️  .claude/settings.json already exists — hook config not merged automatically")
+        print("    Manually ensure hooks are registered or delete settings.json and re-run beads init")
 
-    # Create .planning/ directory (empty for now)
+    # Create .planning/ directory
     planning_dst = project_root / ".planning"
     planning_dst.mkdir(exist_ok=True)
+
+
+# Mandatory files that MUST exist after beads init
+_MANDATORY_FILES = [
+    ".beads/bin/fsm.py",
+    ".beads/bin/router.py",
+    ".beads/PROTOCOL.md",
+    ".beads/ledger.md",
+    ".beads/config.yaml",
+    ".claude/hooks/protect-files.sh",
+    ".claude/hooks/guard-bash.sh",
+    ".claude/hooks/workflow-guard.sh",
+    ".claude/settings.json",
+    ".claude/skills.yaml",
+    "CLAUDE.md",
+]
+
+
+def _verify_init(project_root: Path):
+    """Verify all mandatory files were created. Fail loudly if any are missing."""
+    missing = [f for f in _MANDATORY_FILES if not (project_root / f).exists()]
+    if missing:
+        raise RuntimeError(
+            "beads init incomplete — the following mandatory files are missing:\n"
+            + "\n".join(f"  ✗ {f}" for f in missing)
+            + "\n\nThis may indicate a corrupted package. Try: pipx reinstall claude-beads"
+        )
 
 
 def _create_ledger(project_root: Path, project_name: str):
