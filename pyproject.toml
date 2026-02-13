@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claude-beads"
-version = "1.0.0"
+version = "1.1.0"
 description = "Atomic task execution framework for long-running AI-assisted projects with Claude"
 readme = "README.md"
 requires-python = ">=3.11"
