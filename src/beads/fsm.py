@@ -626,6 +626,80 @@ class BeadFSM:
         print("✓ FSM state cleared")
 
 
+def validate_project():
+    """
+    Validate PROJECT.md has real content and output parsed data.
+    Physical enforcement: writes .beads/.plan-ready flag on success.
+    Without this flag, hooks block writes to .planning/phases/.
+    """
+    project_md = Path(".planning/PROJECT.md")
+    plan_ready = Path(".beads/.plan-ready")
+
+    if not project_md.exists():
+        print("✗ .planning/PROJECT.md not found")
+        print("  Run `beads init` first")
+        sys.exit(1)
+
+    content = project_md.read_text()
+
+    # Extract and validate sections
+    vision_match = re.search(r'## Vision\s*\n+(.*?)(?=\n##|\Z)', content, re.DOTALL)
+    goals_match = re.search(r'## Goals / MVP Target\s*\n+(.*?)(?=\n##|\Z)', content, re.DOTALL)
+
+    vision = vision_match.group(1).strip() if vision_match else ""
+    goals = goals_match.group(1).strip() if goals_match else ""
+
+    errors = []
+    if not vision or vision.startswith("[TODO"):
+        errors.append("Vision is empty or placeholder")
+    if not goals or goals.startswith("[TODO"):
+        errors.append("Goals / MVP Target is empty or placeholder")
+
+    if errors:
+        print("✗ PROJECT.md validation failed:")
+        for e in errors:
+            print(f"  - {e}")
+        print("")
+        print("  Fill in PROJECT.md or re-run `beads init` with real descriptions")
+        sys.exit(1)
+
+    # Write plan-ready flag
+    plan_ready.write_text(json.dumps({
+        "_WARNING": "Temporary flag — deleted after plan-project completes",
+        "validated_at": subprocess.run(
+            ["date", "-u", "+%Y-%m-%dT%H:%M:%SZ"],
+            capture_output=True, text=True
+        ).stdout.strip(),
+    }, indent=2))
+
+    # Extract optional sections (from /beads:onboard)
+    state_match = re.search(r'## Current State\s*\n+(.*?)(?=\n##|\Z)', content, re.DOTALL)
+    current_state = state_match.group(1).strip() if state_match else ""
+
+    stack_match = re.search(r'## Tech Stack\s*\n+(.*?)(?=\n##|\Z)', content, re.DOTALL)
+    tech_stack = stack_match.group(1).strip() if stack_match else ""
+
+    # Output parsed content for Claude to use (physical guarantee it reads this)
+    print("")
+    print("=" * 65)
+    print("  PROJECT VALIDATED")
+    print("=" * 65)
+    print("")
+    print(f"  Vision: {vision[:200]}")
+    print(f"  Goals:  {goals[:200]}")
+    if tech_stack:
+        print(f"  Stack:  {tech_stack[:200]}")
+    if current_state:
+        print(f"  State:  EXISTING PROJECT — has Current State section")
+        print(f"          {current_state[:200]}")
+    else:
+        print(f"  State:  NEW PROJECT — no Current State section")
+    print("")
+    print("  .beads/.plan-ready flag set — phase writes unlocked")
+    print("=" * 65)
+    print("")
+
+
 def main():
     """CLI entry point."""
     if len(sys.argv) < 2:
@@ -689,6 +763,9 @@ def main():
         elif command == "sync-ledger":
             success = fsm.sync_ledger()
             sys.exit(0 if success else 1)
+
+        elif command == "validate-project":
+            validate_project()
 
         else:
             print(f"Unknown command: {command}")

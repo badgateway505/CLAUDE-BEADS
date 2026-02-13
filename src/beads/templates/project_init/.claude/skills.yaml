@@ -8,6 +8,13 @@ skills:
       - execute-bead
       - run-bead
 
+  beads:plan-project:
+    file: beads-plan-project.md
+    description: Generate full phase roadmap for the project
+    aliases:
+      - plan-project
+      - roadmap
+
   beads:plan:
     file: beads-plan.md
     description: Decompose a phase into atomic beads
@@ -33,6 +40,13 @@ skills:
     aliases:
       - transition
       - freeze-phase
+
+  beads:onboard:
+    file: beads-onboard.md
+    description: Onboard existing project into Beads framework
+    aliases:
+      - onboard
+      - bootstrap
 
   beads:help:
     file: beads-help.md

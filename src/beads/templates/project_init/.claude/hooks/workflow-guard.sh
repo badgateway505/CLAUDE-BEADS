@@ -3,6 +3,20 @@
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
+# Phase planning guard: writing to .planning/phases/ requires .plan-ready flag
+if [[ "$FILE_PATH" == *".planning/phases/"* ]]; then
+  if [[ ! -f ".beads/.plan-ready" ]]; then
+    echo "BLOCK: Cannot write to .planning/phases/ without project validation." >&2
+    echo "" >&2
+    echo "Run first: python3 .beads/bin/fsm.py validate-project" >&2
+    echo "" >&2
+    echo "This ensures PROJECT.md has real content (vision, goals) before" >&2
+    echo "generating phases. No hallucinated roadmaps." >&2
+    exit 2
+  fi
+  exit 0
+fi
+
 # Skip if editing framework files (protected by protect-files.sh)
 if [[ "$FILE_PATH" == *".beads/"* ]] || [[ "$FILE_PATH" == *".claude/"* ]] || [[ "$FILE_PATH" == *".planning/"* ]]; then
   exit 0

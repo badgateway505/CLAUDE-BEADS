@@ -18,7 +18,7 @@ console = Console()
 
 
 @click.group()
-@click.version_option(version="1.0.0", prog_name="beads")
+@click.version_option(version="1.1.0", prog_name="beads")
 def cli():
     """Claude Beads - Atomic task execution for AI projects."""
     pass
@@ -26,8 +26,10 @@ def cli():
 
 @cli.command()
 @click.option('--project-name', prompt='Project name', help='Name of your project')
-@click.option('--vision', prompt='Project vision (one line)', help='What are you building?')
-def init(project_name: str, vision: str):
+@click.option('--vision', prompt='What are you building? (elevator pitch)', help='One-paragraph project description')
+@click.option('--goals', prompt='What does "done" look like? (end goal / MVP target)', help='Success criteria and deliverables')
+@click.option('--yes', '-y', is_flag=True, default=False, help='Skip confirmation prompts (for non-interactive use)')
+def init(project_name: str, vision: str, goals: str, yes: bool):
     """Initialize Beads framework in current directory."""
     from beads.init import initialize_project
 
@@ -36,7 +38,7 @@ def init(project_name: str, vision: str):
     # Check if already initialized
     if (project_root / ".beads").exists():
         console.print("[yellow]⚠️  Beads already initialized in this directory[/yellow]")
-        if not click.confirm("Reinitialize?"):
+        if not yes and not click.confirm("Reinitialize?"):
             raise click.Abort()
 
     console.print(Panel.fit(
@@ -45,12 +47,12 @@ def init(project_name: str, vision: str):
     ))
 
     try:
-        initialize_project(project_root, project_name, vision)
+        initialize_project(project_root, project_name, vision, goals)
         console.print("\n[green]✅ Beads initialized successfully![/green]")
         console.print("\n[bold]Next steps:[/bold]")
-        console.print("  1. Review [cyan].beads/ledger.md[/cyan]")
-        console.print("  2. Edit [cyan].planning/PROJECT.md[/cyan] with your project details")
-        console.print("  3. In Claude Code, run: [cyan]/beads:plan phase-01[/cyan]")
+        console.print("  1. Review [cyan].planning/PROJECT.md[/cyan] and [cyan].beads/ledger.md[/cyan]")
+        console.print("  2. In Claude Code, run: [cyan]/beads:plan-project[/cyan] to create your phase roadmap")
+        console.print("  3. Then: [cyan]/beads:plan phase-01[/cyan] to decompose first phase into beads")
         console.print("\n[dim]Documentation: .beads/README.md[/dim]")
     except Exception as e:
         console.print(f"[red]❌ Initialization failed: {e}[/red]")
@@ -76,11 +78,19 @@ def show_help():
 
 ## Workflow
 
-1. **Initialize**: `beads init` (in your project directory)
-2. **Plan phase**: `/beads:plan phase-01` (in Claude Code)
-3. **Execute beads**: `/clear` then `/beads:run` (in Claude Code)
-4. **Close phase**: `/beads:close-phase` (in Claude Code)
-5. Repeat 2-4 until project complete
+### New Project
+1. **Initialize**: `beads init` (in terminal)
+2. **Plan roadmap**: `/beads:plan-project` (in Claude Code — creates all phases)
+3. **Plan phase**: `/beads:plan phase-01` (decomposes phase into beads)
+4. **Execute beads**: `/clear` then `/beads:run` (in Claude Code)
+5. **Close phase**: `/beads:close-phase` (in Claude Code)
+6. Repeat 3-5 until project complete
+
+### Existing Project
+1. **Initialize**: `beads init` (in terminal — scaffolds framework + skills)
+2. **Onboard**: `/beads:onboard` (in Claude Code — scans codebase, enriches PROJECT.md)
+3. **Plan roadmap**: `/beads:plan-project` (creates phases based on analysis)
+4. Continue from step 3 above
 
 ## CLI Commands (Terminal)
 
@@ -92,11 +102,13 @@ def show_help():
 
 After `beads init`, use these in Claude:
 
-- `/beads:run` - Execute active bead (requires `/clear` first)
-- `/beads:plan` - Plan phase into atomic beads
+- `/beads:plan-project` - Generate full phase roadmap for the project
+- `/beads:plan phase-XX` - Decompose a phase into atomic beads
+- `/beads:run` - Execute active bead (recommended: `/clear` first)
 - `/beads:research` - Research technical approach before planning
 - `/beads:resume` - Restore project context after break
 - `/beads:close-phase` - Close and freeze current phase
+- `/beads:onboard` - Analyze existing codebase before init
 - `/beads:help` - Show framework help
 
 ## Key Concepts

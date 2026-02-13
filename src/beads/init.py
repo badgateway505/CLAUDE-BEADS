@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime
 
 
-def initialize_project(project_root: Path, project_name: str, vision: str):
+def initialize_project(project_root: Path, project_name: str, vision: str, goals: str = ""):
     """Initialize Beads framework in project directory.
 
     Creates:
@@ -22,7 +22,7 @@ def initialize_project(project_root: Path, project_name: str, vision: str):
     _create_ledger(project_root, project_name)
 
     # 3. Create PROJECT.md
-    _create_project_md(project_root, project_name, vision)
+    _create_project_md(project_root, project_name, vision, goals, stack)
 
     # 4. Update CLAUDE.md
     _update_claude_md(project_root, project_name)
@@ -116,8 +116,11 @@ def _verify_init(project_root: Path):
 
 
 def _create_ledger(project_root: Path, project_name: str):
-    """Create empty ledger.md."""
+    """Create empty ledger.md. Skips if already exists (e.g. from /beads:onboard)."""
     ledger_path = project_root / ".beads" / "ledger.md"
+    if ledger_path.exists():
+        print("  ⏭️  ledger.md already exists — skipping (preserving onboard data)")
+        return
 
     content = f"""# Ledger: {project_name}
 
@@ -170,10 +173,13 @@ def _create_ledger(project_root: Path, project_name: str):
     ledger_path.write_text(content)
 
 
-def _create_project_md(project_root: Path, project_name: str, vision: str):
-    """Create .planning/PROJECT.md."""
+def _create_project_md(project_root: Path, project_name: str, vision: str, goals: str = ""):
+    """Create .planning/PROJECT.md. Skips if already exists (e.g. from /beads:onboard)."""
     project_md = project_root / ".planning" / "PROJECT.md"
     project_md.parent.mkdir(parents=True, exist_ok=True)
+    if project_md.exists():
+        print("  ⏭️  PROJECT.md already exists — skipping (preserving onboard data)")
+        return
 
     content = f"""# Project: {project_name}
 
@@ -181,31 +187,13 @@ def _create_project_md(project_root: Path, project_name: str, vision: str):
 
 {vision}
 
-## Goals
+## Goals / MVP Target
 
-1. [TODO]
-2. [TODO]
-3. [TODO]
-
-## Constraints
-
-- **Technical**: [TODO]
-- **Timeline**: [TODO]
-- **Resources**: [TODO]
-
-## Success Criteria
-
-- [ ] [TODO]
-- [ ] [TODO]
-- [ ] [TODO]
+{goals}
 
 ## Phases
 
-### Phase 1: [Name]
-**Goal**: [TODO]
-
-**Deliverables**:
-- [TODO]
+*Run `/beads:plan-project` in Claude Code to generate your phase roadmap.*
 
 ---
 
@@ -276,6 +264,7 @@ def _update_gitignore(project_root: Path):
         "# Beads framework runtime state",
         ".beads/fsm-state.json",
         ".beads/fsm-state.backup.json",
+        ".beads/.plan-ready",
         ".beads/temp.md",
         "",
     ]
