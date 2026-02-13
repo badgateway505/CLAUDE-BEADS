@@ -269,26 +269,118 @@ class BeadFSM:
             verification_tier=verification_tier
         )
         self._save_state()
-        print(f"✓ FSM initialized: Bead-{bead_id} ({initial_sha[:8]})")
-        print(f"ℹ️  Tip: Run /clear before each bead for optimal token efficiency")
-        if bead_type == "spike":
-            print(f"  ⚡ Spike bead (exploration mode - no verification required)")
-        if verification_tier != "AUTO":
-            tier_msg = {
-                "MANUAL": "📋 Manual checklist verification required",
-                "NONE": "⚠️  No verification required"
-            }.get(verification_tier, "")
-            if tier_msg:
-                print(f"  {tier_msg}")
-        if active_model:
-            print(f"  ✓ Model guard passed: {active_model}")
 
-        # Auto-transition to EXECUTE (ceremony reduction)
+        # Auto-transition to EXECUTE
         self.context.current_state = State.EXECUTE.value
         self._save_state()
-        print(f"✓ Auto-transitioned to EXECUTE")
-
         self.sync_ledger()
+
+        # Print compact state summary (replaces need to re-read ledger.md)
+        self._print_state_summary(bead_id, bead_path, model, active_model, verification_cmd, verification_tier, bead_type, current_phase)
+
+    def _print_state_summary(
+        self,
+        bead_id: str,
+        bead_path: Optional[str],
+        model: Optional[str],
+        active_model: Optional[str],
+        verification_cmd: Optional[str],
+        verification_tier: str,
+        bead_type: str,
+        current_phase: Optional[str],
+    ) -> None:
+        """Print compact state summary — all context Claude needs, nothing more."""
+        title = self._extract_bead_title(bead_path)
+        goal = self._extract_bead_goal(bead_path)
+        scope = self._extract_context_files(bead_path)
+        phase_progress = self._get_phase_progress(current_phase)
+        model_display = (active_model or model or "any").lower()
+        for base in ['opus', 'sonnet', 'haiku']:
+            if base in model_display:
+                model_display = base
+                break
+
+        width = 65
+        print("")
+        print("╔" + "═" * (width - 2) + "╗")
+        header = f"  ✅ BEAD READY: {bead_id}"
+        if title:
+            header += f" — {title}"
+        print("║" + header.ljust(width - 2) + "║")
+        print("╚" + "═" * (width - 2) + "╝")
+        if goal:
+            print(f"  Goal    : {goal}")
+        if scope:
+            print(f"  Scope   : {', '.join(scope)}")
+        verify_display = verification_cmd or f"{verification_tier} tier"
+        print(f"  Verify  : {verify_display}")
+        print(f"  Phase   : {phase_progress}  |  Model: {model_display}  |  Tier: {verification_tier}")
+        if bead_type == "spike":
+            print(f"  ⚡ Spike bead — exploration mode")
+        print("")
+        print(f"  ℹ️  Tip: /clear before each bead saves tokens")
+        print("")
+
+    def _extract_bead_title(self, bead_path: Optional[str]) -> Optional[str]:
+        """Extract title from '# Bead XX-YY: Title' in bead file."""
+        if not bead_path:
+            return None
+        path = Path(bead_path)
+        if not path.exists():
+            return None
+        for line in path.read_text().splitlines():
+            match = re.match(r'^#\s+Bead\s+[\w-]+:\s+(.+)', line)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    def _extract_bead_goal(self, bead_path: Optional[str]) -> Optional[str]:
+        """Extract Goal line from <intent> block in bead file."""
+        if not bead_path:
+            return None
+        path = Path(bead_path)
+        if not path.exists():
+            return None
+        content = path.read_text()
+        match = re.search(r'\*\*Goal\*\*\s*:\s*(.+)', content)
+        if match:
+            return match.group(1).strip()
+        return None
+
+    def _extract_context_files(self, bead_path: Optional[str]) -> list[str]:
+        """Extract mandatory files from <context_files> block in bead file."""
+        if not bead_path:
+            return []
+        path = Path(bead_path)
+        if not path.exists():
+            return []
+        content = path.read_text()
+        # Find the context_files block
+        block_match = re.search(r'<context_files>(.*?)</context_files>', content, re.DOTALL)
+        if not block_match:
+            return []
+        block = block_match.group(1)
+        # Find mandatory: section and grab file paths (lines starting with "  - ")
+        mandatory_match = re.search(r'mandatory:(.*?)(?:reference:|$)', block, re.DOTALL)
+        if not mandatory_match:
+            return []
+        files = re.findall(r'^\s{2}-\s+(.+)', mandatory_match.group(1), re.MULTILINE)
+        # Filter out ledger.md and placeholder lines
+        return [
+            f.strip() for f in files
+            if not f.strip().startswith('[') and 'ledger.md' not in f
+        ]
+
+    def _get_phase_progress(self, current_phase: Optional[str]) -> str:
+        """Return 'Phase X of Y' from ledger roadmap table."""
+        if not current_phase or not self.LEDGER_FILE.exists():
+            return current_phase or "?"
+        content = self.LEDGER_FILE.read_text()
+        # Count data rows in the Roadmap Overview table (lines like "| 1 | ...")
+        total = len(re.findall(r'^\|\s*\d+\s*\|', content, re.MULTILINE))
+        if total:
+            return f"{int(current_phase)} of {total}"
+        return current_phase
 
     def _extract_phase_number(self, bead_id: str) -> Optional[str]:
         """Extract phase number from bead ID (e.g., '01-03' -> '01')."""
