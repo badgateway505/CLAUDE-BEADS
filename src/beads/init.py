@@ -222,7 +222,7 @@ def _update_claude_md(project_root: Path, project_name: str):
     claude_md = project_root / "CLAUDE.md"
 
     beads_section = """
-## 🧠 Beads Workflow (Beads v2.0)
+## 🧠 Beads Workflow (Beads v)
 
 **When executing beads, read `.beads/PROTOCOL.md` for the full execution protocol.**
 
