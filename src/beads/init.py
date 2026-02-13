@@ -13,10 +13,14 @@ def initialize_project(project_root: Path, project_name: str, vision: str, goals
     - .planning/ directory with PROJECT.md
     - Updates CLAUDE.md (or creates it)
     - Updates .gitignore
+    - Installs /beads:* commands to ~/.claude/commands/ (global)
     """
 
     # 1. Copy template directories
     _copy_templates(project_root)
+
+    # 1b. Install global commands for Claude Code autocomplete
+    _install_global_commands()
 
     # 2. Create empty ledger
     _create_ledger(project_root, project_name)
@@ -35,6 +39,20 @@ def initialize_project(project_root: Path, project_name: str, vision: str, goals
 
     # 7. Verify mandatory files — fail loudly if anything is missing
     _verify_init(project_root)
+
+
+def _install_global_commands():
+    """Install /beads:* commands to ~/.claude/commands/ for Claude Code autocomplete."""
+    skills_src = Path(__file__).parent / "templates" / "project_init" / ".claude" / "skills"
+    commands_dst = Path.home() / ".claude" / "commands"
+    commands_dst.mkdir(parents=True, exist_ok=True)
+
+    for skill_file in skills_src.glob("*.md"):
+        # beads-plan-project.md → beads:plan-project.md
+        command_name = skill_file.name.replace("beads-", "beads:", 1)
+        shutil.copy2(skill_file, commands_dst / command_name)
+
+    print(f"  ✓ Installed /beads:* commands to {commands_dst}")
 
 
 def _copy_templates(project_root: Path):
