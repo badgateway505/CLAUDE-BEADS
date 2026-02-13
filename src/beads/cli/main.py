@@ -14,11 +14,24 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
 
+from beads import __version__
+
 console = Console()
 
 
+def _warn_if_outdated():
+    """Print red warning if a newer version is available on PyPI."""
+    from beads.version_check import check_for_update
+    latest = check_for_update(__version__)
+    if latest:
+        console.print(
+            f"[bold red]⚠  New version available: {__version__} → {latest}[/bold red]\n"
+            f"[red]   Run [bold]beads update[/bold] — current version may behave unexpectedly.[/red]\n"
+        )
+
+
 @click.group()
-@click.version_option(version="1.1.0", prog_name="beads")
+@click.version_option(version=__version__, prog_name="beads")
 def cli():
     """Claude Beads - Atomic task execution for AI projects."""
     pass
@@ -33,6 +46,7 @@ def init(project_name: str, vision: str, goals: str, yes: bool):
     """Initialize Beads framework in current directory."""
     from beads.init import initialize_project
 
+    _warn_if_outdated()
     project_root = Path.cwd()
 
     # Check if already initialized
@@ -64,10 +78,54 @@ def status():
     """Show project status and next actions."""
     from beads.status import show_status
 
+    _warn_if_outdated()
     project_root = Path.cwd()
     _verify_initialized(project_root)
 
     show_status(project_root)
+
+
+@cli.command()
+def update():
+    """Update Claude Beads to the latest version."""
+    import subprocess
+    import sys
+
+    from beads.version_check import get_latest_version
+
+    console.print(f"Current version: [cyan]{__version__}[/cyan]")
+    console.print("Checking PyPI for latest version...")
+
+    latest = get_latest_version()
+    if not latest:
+        console.print("[red]Could not reach PyPI. Check your internet connection.[/red]")
+        raise click.Abort()
+
+    from beads.version_check import _is_newer
+    if not _is_newer(latest, __version__):
+        console.print(f"[green]✅ Already up to date ({__version__})[/green]")
+        return
+
+    console.print(f"Upgrading [cyan]{__version__}[/cyan] → [cyan]{latest}[/cyan]...")
+
+    # Try pipx first, fall back to pip
+    for cmd in [["pipx", "upgrade", "claude-beads"], [sys.executable, "-m", "pip", "install", "-U", "claude-beads"]]:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            break
+    else:
+        console.print(f"[red]Upgrade failed.[/red]\n{result.stderr}")
+        raise click.Abort()
+
+    # Re-install global commands from updated package
+    from beads.init import _install_global_commands
+    _install_global_commands()
+
+    # Clear version cache so next run reflects new version
+    from beads.version_check import CACHE_FILE
+    CACHE_FILE.unlink(missing_ok=True)
+
+    console.print(f"[green]✅ Updated to {latest}[/green]")
 
 
 @cli.command(name='help')
