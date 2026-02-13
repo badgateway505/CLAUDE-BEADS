@@ -29,7 +29,7 @@ Show available Claude Beads commands and workflow.
 ```
 
 **Key Files:**
-- `.beads/ledger.md` - Project state (single source of truth)
+- `.beads/ledger.json` - Project state (single source of truth)
 - `.beads/PROTOCOL.md` - Execution protocol
 - `.beads/fsm-state.json` - Runtime state (during bead execution)
 

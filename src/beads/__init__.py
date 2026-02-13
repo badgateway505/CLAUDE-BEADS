@@ -1,6 +1,6 @@
 """Claude Beads - Atomic task execution for AI projects."""
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Beads Contributors"
 __license__ = "MIT"
 

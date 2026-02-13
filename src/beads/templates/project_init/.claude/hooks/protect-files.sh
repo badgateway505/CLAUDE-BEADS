@@ -5,7 +5,7 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
 # Protected patterns (substring match on absolute path)
 PROTECTED=(
-  ".beads/ledger.md"
+  ".beads/ledger.json"
   ".beads/fsm-state.json"
   ".beads/fsm-state.backup.json"
   ".beads/PROTOCOL.md"

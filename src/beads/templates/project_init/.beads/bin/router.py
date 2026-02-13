@@ -105,7 +105,7 @@ def _default_config() -> dict[str, Any]:
             "hard_rollback_threshold": 2,
         },
         "ledger": {
-            "path": "\.beads/ledger.md",
+            "path": "\.beads/ledger.json",
             "cost_tracking": True,
             "sha_tracking": True,
         },
@@ -315,7 +315,7 @@ class TestMapper:
 
 
 class LedgerValidator:
-    """Validate \.beads/ledger.md structure and consistency."""
+    """Validate \.beads/ledger.json structure and consistency."""
 
     # Required section patterns (regex for flexibility)
     REQUIRED_PATTERNS = [
@@ -335,7 +335,7 @@ class LedgerValidator:
             config = load_config()
 
         ledger_config = config.get("ledger", {})
-        self.ledger_path = Path(ledger_config.get("path", "\.beads/ledger.md"))
+        self.ledger_path = Path(ledger_config.get("path", "\.beads/ledger.json"))
 
     def validate(self) -> bool:
         """
@@ -467,7 +467,7 @@ class FrameworkValidator:
         """Check that active beads have verification commands."""
         # Find active phase from ledger
         ledger_config = self.config.get("ledger", {})
-        ledger_path = Path(ledger_config.get("path", "\.beads/ledger.md"))
+        ledger_path = Path(ledger_config.get("path", "\.beads/ledger.json"))
 
         if not ledger_path.exists():
             print("⚠ Cannot validate beads without ledger")

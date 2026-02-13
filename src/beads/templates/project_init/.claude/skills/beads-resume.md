@@ -5,7 +5,7 @@ Restore project context and find the next action.
 **Usage:** `/beads:resume`
 
 **What it does:**
-1. Reads `.beads/ledger.md` for project state
+1. Reads `.beads/ledger.json` for project state
 2. Shows roadmap progress
 3. Identifies active bead or next action
 4. Provides context on where you left off

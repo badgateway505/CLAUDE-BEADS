@@ -29,7 +29,7 @@ Use the output from this command as your source data — do NOT re-read PROJECT.
 Read these files for extra context:
 
 1. `.planning/PROJECT.md` — full project doc (may have `## Current State` from `/beads:onboard`)
-2. `.beads/ledger.md` — current state
+2. `.beads/ledger.json` — current state
 3. `CLAUDE.md` — any existing project context
 
 **Key check:** Does PROJECT.md have a `## Current State` section?
@@ -100,7 +100,7 @@ Pending
 
 ### Step 5: Update Ledger
 
-Update `.beads/ledger.md` with:
+Update `.beads/ledger.json` with:
 - **Project Vision** (from PROJECT.md)
 - **Global Context** (stack, constraints from PROJECT.md)
 - **Roadmap Overview** table with all phases (Complete phases marked `✅`, first pending marked `🔄 Active`)

@@ -26,7 +26,7 @@ rationale: "Time-boxed exploration to determine if PDM firmware resolves I2S aud
 ## Example 2: Manual Ledger Edit
 
 **Standard:** Ledger only modified via FSM sync
-**Deviation:** Manual edit to ledger.md
+**Deviation:** Manual edit to ledger.json
 
 **Ledger session notes:**
 ```markdown

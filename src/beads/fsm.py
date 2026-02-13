@@ -80,7 +80,7 @@ class BeadFSM:
     # Hardcoded defaults (no config file ceremony)
     MAX_RETRIES = 3
     STATE_FILE = Path(".beads/fsm-state.json")
-    LEDGER_FILE = Path(".beads/ledger.md")
+    LEDGER_FILE = Path(".beads/ledger.json")
 
     def __init__(self):
         self.context: Optional[FSMContext] = None
@@ -105,6 +105,30 @@ class BeadFSM:
             }
             self.STATE_FILE.write_text(json.dumps(state_dict, indent=2))
 
+    def _load_ledger(self) -> dict:
+        """Load ledger.json, return empty structure on missing/corrupt."""
+        if not self.LEDGER_FILE.exists():
+            return {}
+        try:
+            return json.loads(self.LEDGER_FILE.read_text())
+        except json.JSONDecodeError as e:
+            print(f"⚠ ledger.json corrupted: {e}")
+            return {}
+
+    def _save_ledger(self, data: dict) -> bool:
+        """Atomically save ledger.json (write tmp → rename)."""
+        import os
+        tmp = self.LEDGER_FILE.with_suffix(".json.tmp")
+        try:
+            tmp.write_text(json.dumps(data, indent=2))
+            os.rename(tmp, self.LEDGER_FILE)
+            return True
+        except OSError as e:
+            print(f"✗ Ledger write failed: {e}")
+            if tmp.exists():
+                tmp.unlink()
+            return False
+
     def _get_current_commit_sha(self) -> str:
         """Get current git HEAD commit SHA."""
         result = subprocess.run(
@@ -116,10 +140,7 @@ class BeadFSM:
         return result.stdout.strip()
 
     def _check_dependencies_simple(self, bead_path: str) -> bool:
-        """
-        Simple dependency check - verify depends_on beads are marked [x] in ledger.
-        Returns True if all dependencies satisfied.
-        """
+        """Verify depends_on beads are complete in ledger.json."""
         bead_file = Path(bead_path)
         if not bead_file.exists():
             return True
@@ -138,11 +159,13 @@ class BeadFSM:
             print(f"⚠ Cannot validate dependencies - ledger not found")
             return True
 
-        ledger_content = self.LEDGER_FILE.read_text()
+        data = self._load_ledger()
+        beads = data.get("beads", {})
         incomplete = []
         for dep in dependencies:
             dep_id = '-'.join(dep.split('-')[:2])
-            if not re.search(rf'\[x\]\s+Bead[- ]{dep_id}', ledger_content, re.IGNORECASE):
+            bead = beads.get(dep_id)
+            if not bead or bead.get("status") != "complete":
                 incomplete.append(dep_id)
 
         if incomplete:
@@ -228,6 +251,10 @@ class BeadFSM:
         self.context.current_state = State.EXECUTE.value
         self._save_state()
         self.sync_ledger()
+
+        # Derive numeric phase from bead_id (e.g. "06C-01" -> "6", "06-01" -> "6")
+        phase_match = re.match(r'^0*(\d+)', bead_id)
+        current_phase = phase_match.group(1) if phase_match else None
 
         # Print compact state summary
         self._print_state_summary(bead_id, bead_path, model, active_model, verification_cmd, verification_tier, bead_type, current_phase)
@@ -319,7 +346,7 @@ class BeadFSM:
         files = re.findall(r'^\s{2}-\s+(.+)', mandatory_match.group(1), re.MULTILINE)
         return [
             f.strip() for f in files
-            if not f.strip().startswith('[') and 'ledger.md' not in f
+            if not f.strip().startswith('[') and 'ledger.json' not in f
         ]
 
     def _auto_commit(self) -> bool:
@@ -382,29 +409,24 @@ class BeadFSM:
         return True
 
     def _get_phase_progress(self, current_phase: Optional[str]) -> str:
-        """Return 'Phase X of Y' from ledger roadmap table."""
+        """Return 'Phase X of Y' from ledger.json roadmap."""
         if not current_phase or not self.LEDGER_FILE.exists():
             return current_phase or "?"
-        content = self.LEDGER_FILE.read_text()
-        total = len(re.findall(r'^\|\s*\d+\s*\|', content, re.MULTILINE))
+        data = self._load_ledger()
+        total = len(data.get("roadmap", []))
         if total:
-            return f"{int(current_phase)} of {total}"
+            return f"{current_phase} of {total}"
         return current_phase
 
-    def _find_next_pending_bead(self, ledger_content: str) -> Optional[str]:
-        """Find first pending bead in ledger."""
-        pattern = r'- \[ \] Bead[- ](\d{2}[- ]\d{2})'
-        match = re.search(pattern, ledger_content, re.IGNORECASE)
-        if match:
-            return match.group(1).replace(' ', '-')
+    def _find_next_pending_bead(self, data: dict) -> Optional[str]:
+        """Find first pending bead in ledger.json (preserves insertion order)."""
+        for bead_id, bead in data.get("beads", {}).items():
+            if bead.get("status") == "pending":
+                return bead_id
         return None
 
     def sync_ledger(self) -> bool:
-        """
-        Sync FSM state to ledger.md.
-        Updates Active Bead section and marks completed beads with [x].
-        Auto-queues next pending bead when current completes.
-        """
+        """Sync FSM state to ledger.json. No regex — pure dict operations."""
         if not self.context:
             print("✗ FSM not initialized")
             return False
@@ -413,42 +435,37 @@ class BeadFSM:
             print(f"✗ Ledger not found: {self.LEDGER_FILE}")
             return False
 
-        content = self.LEDGER_FILE.read_text()
+        data = self._load_ledger()
         bead_id = self.context.bead_id
         state = self.context.current_state
 
-        # Mark current bead complete in ledger history
-        if state == 'complete':
-            already_complete = re.search(rf'\[x\] Bead[- ]{bead_id}[:\s]', content, re.IGNORECASE)
-            if not already_complete:
-                pattern = rf'(- )\[ \]( Bead[- ]{bead_id}[:\s])'
-                content, n = re.subn(pattern, r'\1[x]\2', content, count=1, flags=re.IGNORECASE)
-                if n > 0:
-                    print(f"✓ Marked Bead-{bead_id} complete in ledger")
+        if "beads" not in data:
+            data["beads"] = {}
 
-        # Update Active Bead section
-        if state in ['complete', 'failed']:
-            next_bead = self._find_next_pending_bead(content)
+        # Mark bead complete
+        if state == "complete":
+            if bead_id in data["beads"]:
+                data["beads"][bead_id]["status"] = "complete"
+                print(f"✓ Marked Bead-{bead_id} complete")
+            else:
+                print(f"⚠ Bead-{bead_id} not in ledger — adding")
+                data["beads"][bead_id] = {"status": "complete", "model": self.context.model}
+
+        # Update active_bead
+        if state in ["complete", "failed"]:
+            next_bead = self._find_next_pending_bead(data)
+            data["active_bead"] = next_bead
             if next_bead:
-                new_active = f"## Active Bead\n\n**Bead-{next_bead}**: PENDING\n"
                 print(f"✓ Auto-queued: Bead-{next_bead}")
             else:
-                new_active = f"## Active Bead\n\n**None** — All beads complete\n"
+                print("✓ All beads complete")
         else:
-            new_active = f"## Active Bead\n\n**Bead-{bead_id}**: {state.upper()}\n"
-            if self.context.retry_count > 0:
-                new_active += f"- Retry: {self.context.retry_count}/{self.MAX_RETRIES}\n"
+            data["active_bead"] = bead_id
 
-        # Replace Active Bead section
-        pattern = r'## Active Bead\n+.*?(?=\n---|\n## |\Z)'
-        if re.search(pattern, content, re.DOTALL):
-            content = re.sub(pattern, new_active.rstrip(), content, flags=re.DOTALL)
-        else:
-            content += f"\n---\n\n{new_active}"
-
-        self.LEDGER_FILE.write_text(content)
-        print(f"✓ Ledger synced: Bead-{bead_id} → {state}")
-        return True
+        result = self._save_ledger(data)
+        if result:
+            print(f"✓ Ledger synced: Bead-{bead_id} → {state}")
+        return result
 
     def transition(self, target_state: str) -> None:
         """

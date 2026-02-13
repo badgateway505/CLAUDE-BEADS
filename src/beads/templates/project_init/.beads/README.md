@@ -2,7 +2,7 @@
 
 ## Single Source of Truth
 
-**`.beads/ledger.md`** is the ONLY source of truth for project state.
+**`.beads/ledger.json`** is the ONLY source of truth for project state.
 
 - Shows completed beads: `[x]`
 - Shows active bead: Listed in "Active Bead" section
@@ -49,7 +49,7 @@
 
 | File | Purpose | When it exists |
 |------|---------|----------------|
-| `ledger.md` | Project history + active bead | Always |
+| `ledger.json` | Project history + active bead | Always |
 | `fsm-state.json` | Runtime state | Only during bead execution |
 | `PROTOCOL.md` | Detailed execution rules | Always |
 | `templates/bead.md` | Implementation bead template | Always |

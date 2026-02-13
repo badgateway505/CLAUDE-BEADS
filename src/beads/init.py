@@ -22,7 +22,7 @@ def initialize_project(project_root: Path, project_name: str, vision: str, goals
     _create_ledger(project_root, project_name)
 
     # 3. Create PROJECT.md
-    _create_project_md(project_root, project_name, vision, goals, stack)
+    _create_project_md(project_root, project_name, vision, goals)
 
     # 4. Update CLAUDE.md
     _update_claude_md(project_root, project_name)
@@ -93,7 +93,7 @@ _MANDATORY_FILES = [
     ".beads/bin/fsm.py",
     ".beads/bin/router.py",
     ".beads/PROTOCOL.md",
-    ".beads/ledger.md",
+    ".beads/ledger.json",
     ".beads/config.yaml",
     ".claude/hooks/protect-files.sh",
     ".claude/hooks/guard-bash.sh",
@@ -116,61 +116,28 @@ def _verify_init(project_root: Path):
 
 
 def _create_ledger(project_root: Path, project_name: str):
-    """Create empty ledger.md. Skips if already exists (e.g. from /beads:onboard)."""
-    ledger_path = project_root / ".beads" / "ledger.md"
+    """Create empty ledger.json. Skips if already exists (e.g. from /beads:onboard)."""
+    ledger_path = project_root / ".beads" / "ledger.json"
     if ledger_path.exists():
-        print("  ⏭️  ledger.md already exists — skipping (preserving onboard data)")
+        print("  ⏭️  ledger.json already exists — skipping (preserving onboard data)")
         return
 
-    content = f"""# Ledger: {project_name}
-
-<!-- ⚠️ WARNING: NEVER MANUALLY EDIT THIS FILE -->
-<!-- Managed by fsm.py sync-ledger command only -->
-<!-- Manual edits will break Beads workflow and cause state desync -->
-
-## Project Vision
-
-[TODO: Add vision from PROJECT.md]
-
-## Global Context
-- **Stack**: [TODO]
-- **Constraints**: [TODO]
-- **Methodology**: Claude Beads (atomic execution, model-optimized)
-
-## Roadmap Overview
-
-| Phase | Name | Goal | Status |
-|-------|------|------|--------|
-| 1 | [TODO] | [TODO] | ⏳ Pending |
-
-**Progress**: Phase 0 of 0 (0% complete)
-
----
-
-## Ledger History
-
-[Beads will be added here after planning]
-
----
-
-## Active Bead
-
-**None** — Run `/beads:plan` in Claude to create first phase
-
----
-
-## Session Notes
-
-- Claude Beads initialized: {_today()}
-- Ledger is the SOLE source of truth
-- Run `/beads:help` in Claude for available commands
-
----
-
-*This project was built using [Claude Beads](https://github.com/badgateway505/CLAUDE-BEADS) - An atomic task execution framework for AI-assisted development.*
-"""
-
-    ledger_path.write_text(content)
+    import json
+    data = {
+        "_warning": "NEVER MANUALLY EDIT — managed by fsm.py only",
+        "project": {
+            "name": project_name,
+            "vision": "",
+            "global_context": {}
+        },
+        "roadmap": [],
+        "beads": {},
+        "active_bead": None,
+        "session_notes": [
+            f"{_today()}: Claude Beads initialized"
+        ]
+    }
+    ledger_path.write_text(json.dumps(data, indent=2))
 
 
 def _create_project_md(project_root: Path, project_name: str, vision: str, goals: str = ""):
@@ -215,7 +182,7 @@ def _update_claude_md(project_root: Path, project_name: str):
 **When executing beads, read `.beads/PROTOCOL.md` for the full execution protocol.**
 
 **Quick reference:**
-1. Read `.beads/ledger.md` first for project state
+1. Read `.beads/ledger.json` first for project state
 2. Suggest next pending bead proactively (Next-In-Line protocol)
 3. Run FSM init — validates model, phase boundaries, bead existence
 4. Execute tasks atomically, verify, sync ledger
@@ -225,7 +192,7 @@ def _update_claude_md(project_root: Path, project_name: str):
 
 **State sources:**
 - `.beads/fsm-state.json` — Runtime state (current bead, retries)
-- `.beads/ledger.md` — Historical record (outcomes, costs)
+- `.beads/ledger.json` — Historical record (outcomes, costs)
 - Bead files — Templates (task specs, verification commands)
 
 **Context isolation:**

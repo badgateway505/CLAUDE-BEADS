@@ -10,10 +10,10 @@
 ## State Guard (Hook-Based Enforcement)
 
 Framework files are physically protected by Claude Code hooks.  
-Claude CANNOT modify `ledger.md`, `fsm-state.json`, or hook scripts directly.
+Claude CANNOT modify `ledger.json`, `fsm-state.json`, or hook scripts directly.
 
 **Protected by hooks:**
-- `.beads/ledger.md` — Edit/Write blocked
+- `.beads/ledger.json` — Edit/Write blocked
 - `.beads/fsm-state.json` — Edit/Write blocked
 - `.beads/bin/*` — Edit/Write blocked
 - `.claude/hooks/*` — Edit/Write blocked (anti-tamper)
@@ -33,7 +33,7 @@ Claude CANNOT modify `ledger.md`, `fsm-state.json`, or hook scripts directly.
 
 ## Execution Protocol
 
-1. **Load Context:** Read `.beads/ledger.md` **only** for project state  
+1. **Load Context:** Read `.beads/ledger.json` **only** for project state  
     &nbsp;&nbsp;- Check "Active Bead" section in ledger  
     &nbsp;&nbsp;- **Do not** read `.beads/fsm-state.json` yet (only exists during active bead execution)  
     &nbsp;&nbsp;- FSM state file created by `init`; deleted when bead completes
@@ -289,7 +289,7 @@ the scope of changes needed.
 
 ## Token Efficiency Rules
 
-- **Read** `.beads/ledger.md` for context (NOT full conversation history)
+- **Read** `.beads/ledger.json` for context (NOT full conversation history)
 - **Read ONLY** active bead + files in `<context_files>` section
 - **Never read** `.claudeignore` files (frozen phases)
 - **Discard** internal reasoning after bead completion
@@ -331,7 +331,7 @@ See `.planning/framework/V2-SPEC.md` for reference.
 ## File Priority (Read Order)
 
 **When starting execution (before `init`):**
-1. `.beads/ledger.md` — Current project state (check "Active Bead" section)
+1. `.beads/ledger.json` — Current project state (check "Active Bead" section)
 2. **Do not** read `.beads/fsm-state.json` (doesn’t exist between beads)
 
 **During bead execution (after `init`):**
@@ -349,7 +349,7 @@ See `.planning/framework/V2-SPEC.md` for reference.
 
 **Authoritative Sources:**
 - Runtime: `.beads/fsm-state.json` — Current bead, state, retry count (exists only during active bead)
-- History: `.beads/ledger.md` — Completed work (`[x]` = done, `[ ]` = pending) + active bead
+- History: `.beads/ledger.json` — Completed work (`[x]` = done, `[ ]` = pending) + active bead
 - Templates: `.planning/phases/XX-*/beads/XX-YY-*.md` — Task specs (static)
 
 **FSM State File Lifecycle:**
@@ -362,7 +362,7 @@ See `.planning/framework/V2-SPEC.md` for reference.
 **State Flow:**
 
 ```
-[Bead Template] → FSM init → [fsm-state.json] → FSM sync-ledger → [ledger.md]
+[Bead Template] → FSM init → [fsm-state.json] → FSM sync-ledger → [ledger.json]
     (static)        (runtime)                   (history)
 ```
 

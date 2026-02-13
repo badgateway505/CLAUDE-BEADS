@@ -31,7 +31,7 @@ depends_on: []
 <context_files>
 ```yaml
 mandatory:
-  - .beads/ledger.md
+  - .beads/ledger.json
   - [relevant source/config files to examine]
 
 reference:

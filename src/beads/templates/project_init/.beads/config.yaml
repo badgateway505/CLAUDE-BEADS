@@ -66,4 +66,4 @@ fsm:
 # LEDGER (Used by fsm.py and router.py)
 # =============================================================================
 ledger:
-  path: ".beads/ledger.md"
+  path: ".beads/ledger.json"

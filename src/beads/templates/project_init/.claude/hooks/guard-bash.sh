@@ -14,7 +14,7 @@ fi
 
 # Protected path patterns
 PROTECTED_PATHS=(
-  ".beads/ledger.md"
+  ".beads/ledger.json"
   ".beads/fsm-state"
   ".beads/PROTOCOL.md"
   ".beads/bin/"

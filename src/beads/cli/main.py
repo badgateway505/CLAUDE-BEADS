@@ -50,7 +50,7 @@ def init(project_name: str, vision: str, goals: str, yes: bool):
         initialize_project(project_root, project_name, vision, goals)
         console.print("\n[green]✅ Beads initialized successfully![/green]")
         console.print("\n[bold]Next steps:[/bold]")
-        console.print("  1. Review [cyan].planning/PROJECT.md[/cyan] and [cyan].beads/ledger.md[/cyan]")
+        console.print("  1. Review [cyan].planning/PROJECT.md[/cyan] and [cyan].beads/ledger.json[/cyan]")
         console.print("  2. In Claude Code, run: [cyan]/beads:plan-project[/cyan] to create your phase roadmap")
         console.print("  3. Then: [cyan]/beads:plan phase-01[/cyan] to decompose first phase into beads")
         console.print("\n[dim]Documentation: .beads/README.md[/dim]")
@@ -118,7 +118,7 @@ After `beads init`, use these in Claude:
 - Verifiable (tests, checklist, or none for spikes)
 - All-or-nothing commit
 
-**Ledger**: Single source of truth (`.beads/ledger.md`)
+**Ledger**: Single source of truth (`.beads/ledger.json`)
 - Tracks all completed work
 - Shows active bead
 - Enables context handoff between beads

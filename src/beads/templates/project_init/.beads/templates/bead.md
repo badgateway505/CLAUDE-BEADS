@@ -33,7 +33,7 @@ depends_on: []  # Optional: prerequisite bead IDs
 <context_files>
 ```yaml
 mandatory:
-  - .beads/ledger.md
+  - .beads/ledger.json
   - [path/to/implementation/target.py]
   - [XX-RESEARCH.md]  # If applicable
 

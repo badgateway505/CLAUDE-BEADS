@@ -80,7 +80,7 @@ class BeadFSM:
     # Hardcoded defaults (no config file ceremony)
     MAX_RETRIES = 3
     STATE_FILE = Path(".beads/fsm-state.json")
-    LEDGER_FILE = Path(".beads/ledger.md")
+    LEDGER_FILE = Path(".beads/ledger.json")
 
     def __init__(self):
         self.context: Optional[FSMContext] = None
@@ -279,7 +279,7 @@ class BeadFSM:
         self._save_state()
         self.sync_ledger()
 
-        # Print compact state summary (replaces need to re-read ledger.md)
+        # Print compact state summary (replaces need to re-read ledger.json)
         self._print_state_summary(bead_id, bead_path, model, active_model, verification_cmd, verification_tier, bead_type, current_phase)
 
     def _print_state_summary(
@@ -369,10 +369,10 @@ class BeadFSM:
         if not mandatory_match:
             return []
         files = re.findall(r'^\s{2}-\s+(.+)', mandatory_match.group(1), re.MULTILINE)
-        # Filter out ledger.md and placeholder lines
+        # Filter out ledger.json and placeholder lines
         return [
             f.strip() for f in files
-            if not f.strip().startswith('[') and 'ledger.md' not in f
+            if not f.strip().startswith('[') and 'ledger.json' not in f
         ]
 
     def _auto_commit(self) -> bool:
@@ -496,7 +496,7 @@ class BeadFSM:
 
     def sync_ledger(self) -> bool:
         """
-        Sync FSM state to ledger.md.
+        Sync FSM state to ledger.json.
         Updates Active Bead section and marks completed beads with [x].
         Auto-queues next pending bead when current completes.
         """

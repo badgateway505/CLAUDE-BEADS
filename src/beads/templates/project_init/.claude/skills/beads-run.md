@@ -7,7 +7,7 @@ Execute the currently active bead from the ledger.
 **Tip:** Run `/clear` before each bead for optimal token efficiency (not enforced).
 
 **What it does:**
-1. Reads `.beads/ledger.md` for active bead
+1. Reads `.beads/ledger.json` for active bead
 2. Runs FSM init (validates model, dependencies)
 3. Executes bead tasks
 4. Runs FSM verify (tests/checklist per verification tier)

@@ -14,7 +14,7 @@ Decompose a phase into atomic, model-optimized beads.
 
 **Output:**
 - Bead files (XML-structured) in beads/ directory
-- Updated ledger.md with bead list
+- Updated ledger.json with bead list
 - First bead ready to execute
 
 **When to use:**
