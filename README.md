@@ -72,9 +72,9 @@ Beads replaces long, drifting AI chats with a series of atomic work sessions. Ea
 - **⚙️ Execute:** Build the feature.
 - **✅ Verify:** Run tests automatically.
 - **💾 Commit:** Save progress to Git.
-- **🧹 Clear:** Reset context for the next task.
+- **🧹 Clear:** Reset context for the next task (recommended, not enforced).
 
-You run two commands: `/clear` and `/beads:run`. The system handles the rest.
+You run two commands: `/clear` (recommended) and `/beads:run`. The system handles the rest.
 
 ---
 
@@ -133,7 +133,7 @@ The framework generates three primary layers:
     /beads:plan phase-01
     ```
 
-2. **Isolate**: Clear the context to maintain token efficiency.
+2. **Isolate** (recommended): Clear the context to maintain token efficiency.
 
     ```bash
     /clear
@@ -149,7 +149,7 @@ The framework generates three primary layers:
 
 ```text
 ╔═══════════════════════════════════════════════════════════════╗
-║  ✓ BEAD READY: 01-01 — Project Architecture                   ║
+║  ✓ BEAD READY: 01-01 — Project Architecture                 ║
 ╚═══════════════════════════════════════════════════════════════╝
   Intent  : Initialize project with core dependencies
   Scope   : pyproject.toml, src/__init__.py
@@ -220,8 +220,8 @@ Core Guardrails:
 
 Beads does not rely on prompts for security. It operates via Claude Code PreToolUse hooks — shell scripts that validate intents before the tool executes.
 
-| Hook               | Target Tools              | Function                                                         |
-|--------------------|---------------------------|------------------------------------------------------------------|
+| Hook               | Target Tools      | Function                                                         |
+|--------------------|-------------------|------------------------------------------------------------------|
 | protect-files.sh   | Edit, Write, NotebookEdit | Immutability for Ledger, FSM, Protocol, and CLAUDE.md.           |
 | guard-bash.sh      | Bash                      | Blocks shell-level tampering (sed, rm, echo) on protected paths. |
 | workflow-guard.sh  | Edit, Write, NotebookEdit | Blocks source code edits unless the FSM is in EXECUTE state.     |
@@ -236,7 +236,7 @@ Efficiency is achieved through Context Isolation. Instead of feeding the entire 
 
 * Mandatory Scope: Only files defined in the bead metadata are read.
 
-* Context Reset: The /clear command is enforced between beads to flush the window.
+* Context Reset: Running `/clear` between beads is recommended to flush the window and maximize token savings.
 
 * Phase Freezing: Closed phases are compressed into XX-SUMMARY.md. Claude references the summary, never the raw source of completed phases.
 
@@ -288,13 +288,13 @@ Standard CLI tools for environment management.
 
 High-level skills for workflow execution.
 
-| Command             | Function                                                                          |
-|---------------------|-----------------------------------------------------------------------------------|
-| `/beads:plan`       | Decompose a phase into atomic, verifiable beads.                                  |
-| `/beads:run`        | Execute the next task. Enforces guards, runs verification, and commits.           |
-| `/beads:research`   | Time-boxed research spike. Outputs findings to `.planning/spikes/`.               |
-| `/beads:resume`     | Synchronize Claude's context with the current Ledger state.                       |
-| `/beads:close-phase`| Seal current phase and generate `XX-SUMMARY.md`.                                  |
+| Command            | Function                                                                          |
+|--------------------|-----------------------------------------------------------------------------------|
+| `/beads:plan`      | Decompose a phase into atomic, verifiable beads.                                  |
+| `/beads:run`       | Execute the next task. Enforces guards, runs verification, and commits.           |
+| `/beads:research`  | Time-boxed research spike. Outputs findings to `.planning/spikes/`.               |
+| `/beads:resume`    | Synchronize Claude's context with the current Ledger state.                       |
+| `/beads:close-phase`| Seal current phase and generate `XX-SUMMARY.md`.                                 |
 
 ---
 
@@ -341,6 +341,33 @@ my-project/
 Distributed under the MIT License. See LICENSE for details.
 
 ---
+
+## 08. FAQ
+
+**How is this different from GSD Beads or other AI workflow frameworks?**
+Most frameworks rely on prompts to guide the AI. Beads uses physical shell hooks that block tool calls before they execute. Claude can't bypass the workflow, edit protected files, or skip verification — the infrastructure prevents it, not the instructions.
+
+**Does this work with ChatGPT, Copilot, or other AI assistants?**
+No. Beads is built specifically for Claude Code's PreToolUse hook system. The physical enforcement layer depends on Claude Code's architecture.
+
+**How much does it save on tokens?**
+Typically 60-70%. Each bead reads only its scoped files (~4K tokens) instead of the entire codebase (80-120K+). Phase freezing prevents re-reading completed work.
+
+**Can Claude bypass the guards?**
+Direct tool calls (Edit, Write, Bash) are fully enforced — Claude cannot bypass them. The one known limitation is Claude Code's Task subagent (background agents), which is a Claude Code architectural constraint.
+
+**Do I need to run /clear between every bead?**
+It's recommended for optimal token efficiency, but not enforced. Beads works without it — you just use more tokens per session.
+
+**Is this only for big projects?**
+Beads shines on multi-phase projects, but even a 5-bead single-phase project benefits from verified commits, context isolation, and model routing.
+
+**Can I use this for vibe coding?**
+That's exactly what it's for. All the structure and safety of traditional engineering, none of the ceremony. Two commands: `/clear` and `/beads:run`.
+
+---
+
+<!-- LLM-readable metadata: see llms.txt in repo root for structured summary -->
 
 <div align="center">
 
