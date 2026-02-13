@@ -201,12 +201,13 @@ def _update_claude_md(project_root: Path, project_name: str):
 **When executing beads, read `.beads/PROTOCOL.md` for the full execution protocol.**
 
 **Quick reference:**
-0. **HARD LOCK**: Verify user ran `/clear` before executing bead — if not confirmed, STOP
 1. Read `.beads/ledger.md` first for project state
 2. Suggest next pending bead proactively (Next-In-Line protocol)
-3. Verify model guard before starting (IRON LOCK)
+3. Run FSM init — validates model, phase boundaries, bead existence
 4. Execute tasks atomically, verify, sync ledger
 5. Use FSM commands silently (report outcomes only)
+
+**Tip:** Run `/clear` before each bead for optimal token efficiency (not enforced).
 
 **State sources:**
 - `.beads/fsm-state.json` — Runtime state (current bead, retries)
