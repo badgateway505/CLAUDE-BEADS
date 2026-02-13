@@ -149,7 +149,7 @@ The framework generates three primary layers:
 
 ```text
 ╔═══════════════════════════════════════════════════════════════╗
-║  ✓ BEAD READY: 01-01 — Project Architecture                 ║
+║  ✓ BEAD READY: 01-01 — Project Architecture                   ║
 ╚═══════════════════════════════════════════════════════════════╝
   Intent  : Initialize project with core dependencies
   Scope   : pyproject.toml, src/__init__.py
@@ -220,8 +220,8 @@ Core Guardrails:
 
 Beads does not rely on prompts for security. It operates via Claude Code PreToolUse hooks — shell scripts that validate intents before the tool executes.
 
-| Hook               | Target Tools      | Function                                                         |
-|--------------------|-------------------|------------------------------------------------------------------|
+| Hook               | Target Tools              | Function                                                         |
+|--------------------|---------------------------|------------------------------------------------------------------|
 | protect-files.sh   | Edit, Write, NotebookEdit | Immutability for Ledger, FSM, Protocol, and CLAUDE.md.           |
 | guard-bash.sh      | Bash                      | Blocks shell-level tampering (sed, rm, echo) on protected paths. |
 | workflow-guard.sh  | Edit, Write, NotebookEdit | Blocks source code edits unless the FSM is in EXECUTE state.     |
@@ -288,13 +288,13 @@ Standard CLI tools for environment management.
 
 High-level skills for workflow execution.
 
-| Command            | Function                                                                          |
-|--------------------|-----------------------------------------------------------------------------------|
-| `/beads:plan`      | Decompose a phase into atomic, verifiable beads.                                  |
-| `/beads:run`       | Execute the next task. Enforces guards, runs verification, and commits.           |
-| `/beads:research`  | Time-boxed research spike. Outputs findings to `.planning/spikes/`.               |
-| `/beads:resume`    | Synchronize Claude's context with the current Ledger state.                       |
-| `/beads:close-phase`| Seal current phase and generate `XX-SUMMARY.md`.                                 |
+| Command             | Function                                                                          |
+|---------------------|-----------------------------------------------------------------------------------|
+| `/beads:plan`       | Decompose a phase into atomic, verifiable beads.                                  |
+| `/beads:run`        | Execute the next task. Enforces guards, runs verification, and commits.           |
+| `/beads:research`   | Time-boxed research spike. Outputs findings to `.planning/spikes/`.               |
+| `/beads:resume`     | Synchronize Claude's context with the current Ledger state.                       |
+| `/beads:close-phase`| Seal current phase and generate `XX-SUMMARY.md`.                                  |
 
 ---
 
