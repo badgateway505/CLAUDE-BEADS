@@ -52,6 +52,7 @@ class FSMContext:
     last_verification_passed: bool = False
     bead_type: str = "implementation"  # "implementation" or "spike"
     verification_tier: str = "AUTO"  # "AUTO" | "MANUAL" | "NONE"
+    bead_path: Optional[str] = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -65,6 +66,8 @@ class FSMContext:
             filtered_data['last_verification_passed'] = False
         if 'bead_type' not in filtered_data:
             filtered_data['bead_type'] = 'implementation'
+        if 'bead_path' not in filtered_data:
+            filtered_data['bead_path'] = None
         if 'verification_tier' not in filtered_data:
             # Auto-detect: spike beads default to NONE, others to AUTO
             filtered_data['verification_tier'] = 'NONE' if filtered_data.get('bead_type') == 'spike' else 'AUTO'
@@ -216,7 +219,8 @@ class BeadFSM:
             model=model,
             last_verification_passed=False,
             bead_type=bead_type,
-            verification_tier=verification_tier
+            verification_tier=verification_tier,
+            bead_path=bead_path,
         )
         self._save_state()
 
@@ -317,6 +321,65 @@ class BeadFSM:
             f.strip() for f in files
             if not f.strip().startswith('[') and 'ledger.md' not in f
         ]
+
+    def _auto_commit(self) -> bool:
+        """
+        Smart stage scope files and auto-commit after successful verification.
+        Returns True if commit succeeded, False otherwise.
+        """
+        if not self.context:
+            return False
+
+        bead_id = self.context.bead_id
+        bead_path = self.context.bead_path
+        scope_files = self._extract_context_files(bead_path)
+
+        # Determine what to stage
+        if scope_files:
+            existing = [f for f in scope_files if Path(f).exists()]
+            if not existing:
+                print("⚠ No scope files found on disk — staging all changed tracked files")
+                stage_cmd = ["git", "add", "-u"]
+            else:
+                print(f"  Staging {len(existing)} scope file(s): {', '.join(existing)}")
+                stage_cmd = ["git", "add"] + existing
+        else:
+            print("⚠ No scope defined — staging all changed tracked files")
+            stage_cmd = ["git", "add", "-u"]
+
+        result = subprocess.run(stage_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(f"✗ git add failed: {result.stderr.strip()}")
+            return False
+
+        # Check if there's anything to commit
+        status = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            capture_output=True
+        )
+        if status.returncode == 0:
+            print("⚠ Nothing staged — working tree already clean, skipping commit")
+            return True  # Not a failure — just nothing to commit
+
+        # Generate commit message
+        title = self._extract_bead_title(bead_path) or bead_id
+        commit_msg = f"beads({bead_id}): {title}"
+
+        result = subprocess.run(
+            ["git", "commit", "-m", commit_msg],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            print(f"✗ git commit failed: {result.stderr.strip()}")
+            return False
+
+        sha = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True, text=True
+        ).stdout.strip()
+        print(f"✓ Committed: {commit_msg} ({sha})")
+        return True
 
     def _get_phase_progress(self, current_phase: Optional[str]) -> str:
         """Return 'Phase X of Y' from ledger roadmap table."""
@@ -461,6 +524,15 @@ class BeadFSM:
             self.context.last_verification_passed = True
             self._save_state()
             print("✓ Verification PASSED")
+
+            # Verified Commit: auto-commit scope files before marking DONE
+            if not self._auto_commit():
+                print("✗ Auto-commit failed — bead remains in EXECUTE state")
+                print("  Fix git issues and re-run: fsm.py verify")
+                self.context.last_verification_passed = False
+                self._save_state()
+                return False
+
             if State(self.context.current_state) == State.EXECUTE:
                 self.transition(State.VERIFY.value)
             self.transition(State.COMPLETE.value)
