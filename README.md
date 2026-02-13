@@ -2,7 +2,7 @@
 
 # 🧵 Claude Beads
 
-### *Stop drowning in context. Start building with beads.*
+### *Stop drowning in context. Finish projects with Beads.*
 
 **Atomic task execution for AI-assisted development — with physical enforcement**
 
