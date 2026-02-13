@@ -9,7 +9,7 @@ if [[ "$FILE_PATH" == *".beads/"* ]] || [[ "$FILE_PATH" == *".claude/"* ]] || [[
 fi
 
 # Skip if editing documentation/config files that don't require active bead
-if [[ "$FILE_PATH" == *"README"* ]] || [[ "$FILE_PATH" == *"LICENSE"* ]] || [[ "$FILE_PATH" == *".gitignore"* ]] || [[ "$FILE_PATH" == *"CLAUDE.md"* ]]; then
+if [[ "$FILE_PATH" == *"README"* ]] || [[ "$FILE_PATH" == *"LICENSE"* ]] || [[ "$FILE_PATH" == *".gitignore"* ]]; then
   exit 0
 fi
 

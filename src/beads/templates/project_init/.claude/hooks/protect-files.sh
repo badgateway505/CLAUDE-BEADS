@@ -12,6 +12,7 @@ PROTECTED=(
   ".beads/bin/"
   ".claude/hooks/"
   ".claude/settings.json"
+  "CLAUDE.md"
 )
 
 for pattern in "${PROTECTED[@]}"; do
