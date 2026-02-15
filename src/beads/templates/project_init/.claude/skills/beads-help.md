@@ -9,7 +9,7 @@ Show available Claude Beads commands and workflow.
 | Command | Purpose |
 |---------|---------|
 | `/beads:run` | Execute active bead |
-| `/beads:plan` | Plan phase into beads |
+| `/beads:plan-phase` | Plan phase into beads |
 | `/beads:research` | Research before planning |
 | `/beads:resume` | Restore project context |
 | `/beads:close-phase` | Close phase and freeze |
@@ -21,7 +21,7 @@ Show available Claude Beads commands and workflow.
 ```
 1. /clear
 2. /beads:resume (if needed)
-3. /beads:plan (if phase not planned)
+3. /beads:plan-phase (if phase not planned)
 4. /beads:run (execute active bead)
 5. Repeat 1-4 until phase done
 6. /beads:close-phase

@@ -171,7 +171,7 @@ Roadmap complete
   Next    : Phase {first_pending} — {name}
 
   Next steps:
-  1. Run `/beads:plan phase-{first_pending}` to decompose into beads
+  1. Run `/beads:plan-phase {first_pending}` to decompose into beads
   2. Then run `/beads:run` to execute the first bead
 ```
 

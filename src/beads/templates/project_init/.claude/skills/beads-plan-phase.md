@@ -2,7 +2,7 @@
 
 Decompose a phase into atomic, model-optimized beads.
 
-**Usage:** `/beads:plan phase-XX`
+**Usage:** `/beads:plan-phase XX`
 
 ---
 
