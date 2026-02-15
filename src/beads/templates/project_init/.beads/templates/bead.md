@@ -5,7 +5,6 @@
 id: XX-YY-[slug]
 phase: [XX-phase-name]
 model: [opus | sonnet | haiku]
-cost_estimate: [0.XX USD]
 verification_tier: AUTO  # AUTO | MANUAL | NONE
 verification_cmd: "pytest tests/test_foo.py -v"  # Required for AUTO tier
 # verification_checklist:  # Required for MANUAL tier

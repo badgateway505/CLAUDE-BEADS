@@ -5,7 +5,6 @@
 id: 03-02-user-login
 phase: 03-authentication
 model: sonnet
-cost_estimate: 0.25 USD
 verification_tier: AUTO
 verification_cmd: "pytest tests/test_auth.py::test_login -v"
 depends_on: ["03-01"]

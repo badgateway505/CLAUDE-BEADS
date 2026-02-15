@@ -5,7 +5,6 @@
 id: 05-03-dashboard-charts
 phase: 05-frontend-ui
 model: sonnet
-cost_estimate: 0.30 USD
 verification_tier: MANUAL
 verification_checklist:
   - [ ] Dashboard loads without errors in browser console

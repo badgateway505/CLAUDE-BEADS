@@ -33,7 +33,6 @@ Create 3-7 atomic beads. Each bead must be:
 id: XX-YY-short-name
 phase: XX-phase-name
 model: sonnet
-cost_estimate: 0.05 USD
 verification_tier: AUTO
 verification_cmd: "command that exits 0 on success"
 depends_on: []
