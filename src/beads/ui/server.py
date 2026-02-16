@@ -52,7 +52,7 @@ def _build_data(project_root: Path) -> dict:
     for entry in roadmap:
         roadmap_status[entry.get("phase", "")] = entry.get("status", "open")
 
-    # Collect all phase numbers from beads + roadmap
+    # Collect all phase numbers from beads + roadmap + .planning/phases/ dirs
     all_phases: set[str] = set()
     for bid, info in beads_dict.items():
         phase = info.get("phase")
@@ -62,6 +62,12 @@ def _build_data(project_root: Path) -> dict:
         p = entry.get("phase")
         if p:
             all_phases.add(p)
+    if planning_dir.exists():
+        for phase_dir in planning_dir.iterdir():
+            if phase_dir.is_dir():
+                m = re.match(r'^(\d{2})-', phase_dir.name)
+                if m:
+                    all_phases.add(m.group(1))
 
     # Build phase objects
     phases = []
@@ -70,20 +76,35 @@ def _build_data(project_root: Path) -> dict:
             bid: info for bid, info in beads_dict.items()
             if info.get("phase") == phase_num
         }
+
+        # Find phase dir on disk for title lookups + planned-but-not-started beads
+        phase_dir_path: Path | None = None
+        if planning_dir.exists():
+            for d in planning_dir.iterdir():
+                if d.is_dir() and d.name.startswith(f"{phase_num}-"):
+                    phase_dir_path = d
+                    break
+
+        # Collect bead files on disk (planned beads not yet in ledger)
+        disk_beads: dict[str, Path] = {}
+        if phase_dir_path:
+            beads_dir = phase_dir_path / "beads"
+            if beads_dir.exists():
+                for bead_file in beads_dir.glob(f"{phase_num}-*.md"):
+                    m = re.match(r'^(\d{2}-\d{2})', bead_file.stem)
+                    if m:
+                        disk_beads[m.group(1)] = bead_file
+
+        # Merge ledger beads + disk beads
+        all_bead_ids = sorted(set(list(phase_beads_raw.keys()) + list(disk_beads.keys())))
+
         phase_beads = []
-        for bid in sorted(phase_beads_raw.keys()):
-            info = phase_beads_raw[bid]
-            status = info.get("status", "pending")
-
-            # Try to get title from bead file
+        for bid in all_bead_ids:
+            info = phase_beads_raw.get(bid, {})
+            status = info.get("status", "planned")
             title = None
-            if planning_dir.exists():
-                for phase_dir in planning_dir.iterdir():
-                    if phase_dir.is_dir() and phase_dir.name.startswith(f"{phase_num}-"):
-                        for bead_file in (phase_dir / "beads").glob(f"{bid}*.md"):
-                            title = _read_bead_title(bead_file)
-                            break
-
+            if bid in disk_beads:
+                title = _read_bead_title(disk_beads[bid])
             phase_beads.append({
                 "id": bid,
                 "title": title or bid,

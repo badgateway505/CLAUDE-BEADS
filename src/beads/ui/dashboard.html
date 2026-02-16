@@ -135,6 +135,7 @@
                        'bg-red-400': bead.status === 'failed',
                        'bg-orange-400': bead.status === 'recover',
                        'bg-gray-300': bead.status === 'pending' || bead.status === 'draft',
+                       'bg-gray-200 border border-gray-300': bead.status === 'planned',
                      }">
                 </div>
 
@@ -156,6 +157,7 @@
                         'bg-red-100 text-red-500': bead.status === 'failed',
                         'bg-gray-100 text-gray-400': bead.status === 'pending' || bead.status === 'draft',
                         'bg-orange-100 text-orange-500': bead.status === 'recover',
+                        'bg-gray-50 text-gray-300 border border-gray-200': bead.status === 'planned',
                       }"
                       x-text="bead.status">
                 </span>
