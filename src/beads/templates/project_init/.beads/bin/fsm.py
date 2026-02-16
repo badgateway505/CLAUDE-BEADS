@@ -276,6 +276,11 @@ class BeadFSM:
                 print(f"  Switch models before proceeding.")
                 sys.exit(1)
 
+        # Reset error counter — new bead, fresh start
+        error_count = Path(".beads/.error-count")
+        if error_count.exists():
+            error_count.unlink()
+
         initial_sha = self._get_current_commit_sha()
         self.context = FSMContext(
             bead_id=bead_id,
@@ -599,6 +604,9 @@ class BeadFSM:
                 print(f"✓ Auto-queued: Bead-{next_bead}")
             else:
                 data["active_bead"] = None
+                # Clean up fsm-state.json — no more beads to run
+                if self.STATE_FILE.exists():
+                    self.STATE_FILE.unlink()
         else:
             data["active_bead"] = bead_id
 
@@ -677,6 +685,10 @@ class BeadFSM:
 
         if result.returncode == 0:
             self.context.last_verification_passed = True
+            # Reset error counter on successful verification
+            error_count = Path(".beads/.error-count")
+            if error_count.exists():
+                error_count.unlink()
             self._save_state()
             print("✓ Verification PASSED")
 
@@ -712,12 +724,13 @@ class BeadFSM:
 
         if self.context.retry_count >= self.MAX_RETRIES:
             print(f"✗ Circuit breaker: {self.context.retry_count}/{self.MAX_RETRIES} attempts")
+            print("")
+            print("⛔ STOP. Report this failure to the user.")
+            print("Do NOT attempt rollback or other recovery commands.")
             self.transition(State.FAILED.value)
         else:
             print(f"⚠ Retry {self.context.retry_count}/{self.MAX_RETRIES} - entering RECOVER")
             self.transition(State.RECOVER.value)
-            if self.context.retry_count >= 2:
-                print("⚠ Consider rollback: fsm.py rollback")
 
         return False
 
@@ -965,6 +978,11 @@ def main():
 
             data["active_bead"] = None
             fsm.LEDGER_FILE.write_text(json.dumps(data, indent=2))
+
+            # Clean up stale fsm-state.json (no active bead after phase close)
+            if fsm.STATE_FILE.exists():
+                fsm.STATE_FILE.unlink()
+
             print(f"✓ Phase {phase_num} closed")
 
         elif command == "validate-project":

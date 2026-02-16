@@ -121,11 +121,40 @@ def update():
     from beads.init import _install_global_commands
     _install_global_commands()
 
+    # Sync framework files to current project (if initialized)
+    if (Path.cwd() / ".beads").exists():
+        from beads.sync import sync_project
+        updated = sync_project(Path.cwd())
+        if updated:
+            console.print(f"  Synced {len(updated)} framework file(s)")
+
     # Clear version cache so next run reflects new version
     from beads.version_check import CACHE_FILE
     CACHE_FILE.unlink(missing_ok=True)
 
     console.print(f"[green]✅ Updated to {latest}[/green]")
+
+
+@cli.command()
+def sync():
+    """Sync framework files (hooks, FSM, settings) to current project."""
+    from beads.sync import sync_project
+
+    _warn_if_outdated()
+    project_root = Path.cwd()
+    _verify_initialized(project_root)
+
+    try:
+        updated = sync_project(project_root)
+        if updated:
+            console.print(f"\n[green]✅ Synced {len(updated)} file(s):[/green]")
+            for f in updated:
+                console.print(f"  [cyan]{f}[/cyan]")
+        else:
+            console.print("[green]✅ Already up to date[/green]")
+    except Exception as e:
+        console.print(f"[red]❌ Sync failed: {e}[/red]")
+        raise click.Abort()
 
 
 @cli.command(name='help')
@@ -153,6 +182,8 @@ def show_help():
 ## CLI Commands (Terminal)
 
 - `beads init` - Initialize framework in current project
+- `beads sync` - Sync latest hooks/FSM/skills to current project
+- `beads update` - Upgrade package + sync framework files
 - `beads status` - Show project status and active bead
 - `beads help` - Show this help
 

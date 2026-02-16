@@ -116,6 +116,8 @@ _MANDATORY_FILES = [
     ".claude/hooks/protect-files.sh",
     ".claude/hooks/guard-bash.sh",
     ".claude/hooks/workflow-guard.sh",
+    ".claude/hooks/error-lock.sh",
+    ".claude/hooks/error-tracker.sh",
     ".claude/settings.json",
     ".claude/skills.yaml",
     "CLAUDE.md",
@@ -250,6 +252,7 @@ def _update_gitignore(project_root: Path):
         ".beads/fsm-state.json",
         ".beads/fsm-state.backup.json",
         ".beads/.plan-ready",
+        ".beads/.error-count",
         ".beads/temp.md",
         "",
     ]

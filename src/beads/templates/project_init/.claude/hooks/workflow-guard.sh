@@ -3,6 +3,9 @@
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty')
 
+# Error lock — hard block after 2 consecutive errors
+source "$(dirname "$0")/error-lock.sh"
+
 # Phase planning guard: writing phase OVERVIEW files requires .plan-ready flag
 # Exempt: bead files under /beads/ (created by /beads:plan-phase)
 # Exempt: files that already exist (updates to OVERVIEWs during /beads:plan-phase are legitimate)
@@ -13,10 +16,13 @@ if [[ "$FILE_PATH" == *".planning/phases/"* ]] && [[ "$FILE_PATH" != *"/beads/"*
   if [[ ! -f ".beads/.plan-ready" ]]; then
     echo "BLOCK: Cannot create new phase files without project validation." >&2
     echo "" >&2
-    echo "Run first: python3 .beads/bin/fsm.py validate-project" >&2
+    echo "⛔ STOP. Do not attempt to fix this yourself." >&2
+    echo "Report this error to the user exactly as shown." >&2
+    echo "Do NOT run rollback, transition, or any FSM command to work around this." >&2
     echo "" >&2
-    echo "This ensures PROJECT.md has real content (vision, goals) before" >&2
-    echo "generating phases. No hallucinated roadmaps." >&2
+    echo "Cause: .beads/.plan-ready flag not set." >&2
+    echo "The user needs to run: python3 .beads/bin/fsm.py validate-project" >&2
+    increment_error_count
     exit 2
   fi
   exit 0
@@ -28,20 +34,21 @@ if [[ "$FILE_PATH" == *".beads/"* ]] || [[ "$FILE_PATH" == *".claude/"* ]] || [[
 fi
 
 # Skip if editing documentation/config files that don't require active bead
-if [[ "$FILE_PATH" == *"README"* ]] || [[ "$FILE_PATH" == *"LICENSE"* ]] || [[ "$FILE_PATH" == *".gitignore"* ]]; then
+if [[ "$FILE_PATH" == *"README"* ]] || [[ "$FILE_PATH" == *"LICENSE"* ]] || [[ "$FILE_PATH" == *".gitignore"* ]] || [[ "$FILE_PATH" == *".claudeignore"* ]]; then
   exit 0
 fi
 
 # For project source files, require active bead in EXECUTE state
 if [[ ! -f ".beads/fsm-state.json" ]]; then
-  echo "BLOCK: No active bead. You must initialize a bead before editing project files." >&2
+  echo "BLOCK: No active bead. Cannot edit project files without an initialized bead." >&2
   echo "" >&2
-  echo "Run: python3 .beads/bin/fsm.py init <bead-id> --active-model <model> --bead <path>" >&2
+  echo "⛔ STOP. Do not attempt to fix this yourself." >&2
+  echo "Report this error to the user exactly as shown." >&2
+  echo "Do NOT run rollback, transition, or any FSM command to work around this." >&2
   echo "" >&2
-  echo "This ensures:" >&2
-  echo "  - Phase boundaries are respected (previous phase closed)" >&2
-  echo "  - Model guard is enforced (correct model for task)" >&2
-  echo "  - Work is tracked in ledger" >&2
+  echo "Cause: .beads/fsm-state.json not found — no bead is active." >&2
+  echo "The user needs to run /beads:run or /beads:plan-phase to set up a bead." >&2
+  increment_error_count
   exit 2
 fi
 
@@ -50,9 +57,13 @@ FSM_STATE=$(jq -r '.current_state // empty' .beads/fsm-state.json 2>/dev/null)
 if [[ "$FSM_STATE" != "execute" ]]; then
   echo "BLOCK: FSM state is '$FSM_STATE', not 'execute'. Stale or invalid state detected." >&2
   echo "" >&2
-  echo "If a bead completed, the state file should have been removed." >&2
-  echo "Run: python3 .beads/bin/fsm.py status  (to inspect)" >&2
-  echo "Run: python3 .beads/bin/fsm.py rollback (to reset)" >&2
+  echo "⛔ STOP. Do not attempt to fix this yourself." >&2
+  echo "Report this error to the user exactly as shown." >&2
+  echo "Do NOT run rollback, transition, or any FSM command to work around this." >&2
+  echo "" >&2
+  echo "Cause: .beads/fsm-state.json exists but is in '$FSM_STATE' state." >&2
+  echo "This usually means a previous bead completed but state wasn't cleaned up." >&2
+  increment_error_count
   exit 2
 fi
 
