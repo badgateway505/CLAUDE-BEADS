@@ -124,11 +124,12 @@ def _build_data(project_root: Path) -> dict:
             "total": total,
             "complete": complete,
             "pct": pct,
+            "has_beads": total > 0,
         })
 
-    # Overall completion
-    total_beads = len(beads_dict)
-    complete_beads = sum(1 for b in beads_dict.values() if b.get("status") == "complete")
+    # Overall completion — derived from phases (includes planned beads from disk)
+    total_beads = sum(p["total"] for p in phases)
+    complete_beads = sum(p["complete"] for p in phases)
     overall_pct = round(complete_beads / total_beads * 100) if total_beads else 0
 
     # Error lock

@@ -58,8 +58,7 @@
              :style="'width: ' + (data?.overall_pct || 0) + '%'"></div>
       </div>
       <div class="mt-2 flex gap-4 text-xs text-gray-400">
-        <span x-text="data?.complete_beads + ' of ' + data?.total_beads + ' beads complete'"></span>
-        <span x-text="data?.phases?.length + ' phases'"></span>
+        <span x-text="data?.complete_beads + ' beads done · ' + data?.total_beads + ' total across ' + data?.phases?.length + ' phases'"></span>
       </div>
     </div>
   </div>
@@ -121,7 +120,11 @@
 
         <!-- Beads list -->
         <div x-show="phase.open" x-collapse class="border-t border-gray-100">
-          <div class="px-5 py-2 space-y-1">
+          <!-- No beads yet -->
+          <div x-show="!phase.has_beads" class="px-5 py-4 text-sm text-gray-400 italic">
+            Beads will be generated at <code class="bg-gray-100 px-1 rounded text-xs">/beads:plan-phase</code>
+          </div>
+          <div x-show="phase.has_beads" class="px-5 py-2 space-y-1">
             <template x-for="bead in phase.beads" :key="bead.id">
               <div class="flex items-center gap-3 py-2 px-3 rounded-lg"
                    :class="bead.active ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-gray-50'">
@@ -164,8 +167,6 @@
               </div>
             </template>
           </div>
-          <div class="px-5 pb-3 text-xs text-gray-400 text-right"
-               x-text="phase.complete + ' of ' + phase.total + ' beads complete'">
           </div>
         </div>
       </div>
@@ -180,7 +181,7 @@
 
   <!-- Footer -->
   <footer class="max-w-4xl mx-auto px-6 py-6 text-center text-xs text-gray-300">
-    Claude Beads Dashboard · auto-refreshes every 3s
+    Claude Beads Dashboard · auto-refreshes every 5 min
   </footer>
 
   <script>
@@ -192,7 +193,7 @@
 
         async init() {
           await this.refresh();
-          setInterval(() => this.refresh(), 3000);
+          setInterval(() => this.refresh(), 300000);
         },
 
         async refresh() {
