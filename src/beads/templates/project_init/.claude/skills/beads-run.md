@@ -64,16 +64,24 @@ python3 .beads/bin/fsm.py verify "echo spike-complete"
 
 ### Step 6: Report
 
-```
-Bead XX-YY complete
+Use this markdown format exactly:
 
-  Task   : [title]
-  Verify : PASS
-  Commit : [sha]
+---
 
-  Next: `/beads:run` for the next bead
-        or `/beads:close-phase` if all phase beads are done
-```
+## ✅ Bead XX-YY — [title]
+
+| | |
+|---|---|
+| 🔍 Verify | PASS |
+| 🔨 Commit | `sha` |
+
+**Files delivered:**
+- `path/to/file` — one-line description
+
+---
+
+> **Next:** `/beads:run` for bead XX-YY+1
+> or `/beads:close-phase` if this was the last bead in the phase
 
 ---
 
