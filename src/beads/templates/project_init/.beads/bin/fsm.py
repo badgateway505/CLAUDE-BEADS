@@ -410,13 +410,13 @@ class BeadFSM:
             # Stage only scope files that exist
             existing = [f for f in scope_files if Path(f).exists()]
             if not existing:
-                print("⚠ No scope files found on disk — staging all changed tracked files")
+                pass  # internal
                 stage_cmd = ["git", "add", "-u"]
             else:
                 print(f"  Staging {len(existing)} scope file(s): {', '.join(existing)}")
                 stage_cmd = ["git", "add"] + existing
         else:
-            print("⚠ No scope defined — staging all changed tracked files")
+            pass  # internal
             stage_cmd = ["git", "add", "-u"]
 
         result = subprocess.run(stage_cmd, capture_output=True, text=True)
@@ -577,7 +577,7 @@ class BeadFSM:
         # Update bead status
         beads[bead_id]["status"] = state
         if state == 'complete':
-            print(f"✓ Marked Bead-{bead_id} complete in ledger")
+            pass  # internal — not shown to user
 
         # Update active bead
         if state in ['complete', 'failed']:
@@ -609,7 +609,6 @@ class BeadFSM:
             data["active_bead"] = bead_id
 
         self.LEDGER_FILE.write_text(json.dumps(data, indent=2))
-        print(f"✓ Ledger synced: Bead-{bead_id} → {state}")
         return True
 
     def transition(self, target_state: str) -> None:
@@ -656,7 +655,7 @@ class BeadFSM:
 
         self.context.current_state = new_state.value
         self._save_state()
-        print(f"✓ Transition: {current.value} -> {new_state.value}")
+        pass  # internal transition — not shown to user
 
         self.sync_ledger()
 
