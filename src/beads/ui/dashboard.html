@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beads Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] { display: none !important; }
+    .progress-bar { transition: width 0.6s ease; }
+    .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800" x-data="dashboard()" x-init="init()">
+
+  <!-- Error lock banner -->
+  <div x-show="data?.error_locked" x-cloak
+       class="bg-red-600 text-white text-center py-2 px-4 text-sm font-medium">
+    🔒 Session locked — 2 consecutive errors. Run <code class="bg-red-700 px-1 rounded">rm .beads/.error-count</code> to unlock.
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🪡</span>
+        <div>
+          <h1 class="text-lg font-semibold text-gray-900" x-text="data?.project?.name || 'Loading…'"></h1>
+          <p class="text-xs text-gray-400" x-text="data?.project?.vision?.slice(0, 80) || ''"></p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-sm text-gray-500">
+        <span x-show="refreshing" class="pulse-dot text-blue-400">⟳ updating</span>
+        <span x-text="lastUpdated ? 'Updated ' + lastUpdated : ''"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Overall progress -->
+  <div class="bg-white border-b border-gray-100" x-show="data && !data.error" x-cloak>
+    <div class="max-w-4xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-gray-600">Overall Progress</span>
+        <span class="text-sm font-bold" :class="data?.overall_pct === 100 ? 'text-green-600' : 'text-gray-700'"
+              x-text="data?.overall_pct + '%'"></span>
+      </div>
+      <div class="w-full bg-gray-100 rounded-full h-2">
+        <div class="progress-bar h-2 rounded-full"
+             :class="data?.overall_pct === 100 ? 'bg-green-500' : 'bg-blue-500'"
+             :style="'width: ' + (data?.overall_pct || 0) + '%'"></div>
+      </div>
+      <div class="mt-2 flex gap-4 text-xs text-gray-400">
+        <span x-text="data?.complete_beads + ' of ' + data?.total_beads + ' beads complete'"></span>
+        <span x-text="data?.phases?.length + ' phases'"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div x-show="data?.error" x-cloak class="max-w-4xl mx-auto px-6 py-12 text-center text-gray-400">
+    <div class="text-4xl mb-3">⚠️</div>
+    <p x-text="data?.error"></p>
+  </div>
+
+  <!-- Phases -->
+  <main class="max-w-4xl mx-auto px-6 py-6 space-y-3" x-show="data && !data.error" x-cloak>
+    <template x-for="phase in data?.phases" :key="phase.num">
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden fade-in">
+
+        <!-- Phase header -->
+        <button @click="phase.open = !phase.open"
+                class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
+          <div class="flex items-center gap-3 min-w-0">
+            <!-- Phase status icon -->
+            <span x-text="phase.status === 'closed' ? '✅' : (phase.pct === 0 ? '⬜' : '🔵')"></span>
+            <div class="text-left min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-gray-400" x-text="'Phase ' + phase.num"></span>
+                <span class="px-1.5 py-0.5 text-xs rounded-full font-medium"
+                      :class="{
+                        'bg-green-100 text-green-700': phase.status === 'closed',
+                        'bg-blue-100 text-blue-700': phase.status === 'open' && phase.pct > 0,
+                        'bg-gray-100 text-gray-500': phase.status === 'open' && phase.pct === 0,
+                      }"
+                      x-text="phase.status === 'closed' ? 'closed' : (phase.pct > 0 ? 'in progress' : 'pending')">
+                </span>
+              </div>
+              <div class="font-medium text-gray-800 truncate" x-text="phase.name"></div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 shrink-0 ml-4">
+            <!-- Phase progress -->
+            <div class="text-right hidden sm:block">
+              <div class="text-sm font-semibold" :class="phase.pct === 100 ? 'text-green-600' : 'text-gray-600'"
+                   x-text="phase.pct + '%'"></div>
+              <div class="text-xs text-gray-400" x-text="phase.complete + '/' + phase.total"></div>
+            </div>
+            <!-- Mini progress bar -->
+            <div class="w-20 bg-gray-100 rounded-full h-1.5 hidden sm:block">
+              <div class="progress-bar h-1.5 rounded-full"
+                   :class="phase.pct === 100 ? 'bg-green-500' : 'bg-blue-400'"
+                   :style="'width: ' + phase.pct + '%'"></div>
+            </div>
+            <!-- Chevron -->
+            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200"
+                 :class="phase.open ? 'rotate-180' : ''"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Beads list -->
+        <div x-show="phase.open" x-collapse class="border-t border-gray-100">
+          <div class="px-5 py-2 space-y-1">
+            <template x-for="bead in phase.beads" :key="bead.id">
+              <div class="flex items-center gap-3 py-2 px-3 rounded-lg"
+                   :class="bead.active ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-gray-50'">
+
+                <!-- Status dot -->
+                <div class="w-2 h-2 rounded-full shrink-0"
+                     :class="{
+                       'bg-green-500': bead.status === 'complete',
+                       'bg-blue-500 pulse-dot': bead.status === 'execute',
+                       'bg-purple-400 pulse-dot': bead.status === 'verify',
+                       'bg-red-400': bead.status === 'failed',
+                       'bg-orange-400': bead.status === 'recover',
+                       'bg-gray-300': bead.status === 'pending' || bead.status === 'draft',
+                     }">
+                </div>
+
+                <span class="text-xs font-mono text-gray-400 shrink-0" x-text="bead.id"></span>
+
+                <span class="text-sm text-gray-700 truncate" x-text="bead.title"></span>
+
+                <!-- Active badge -->
+                <span x-show="bead.active"
+                      class="ml-auto shrink-0 text-xs bg-blue-100 text-blue-600 font-medium px-2 py-0.5 rounded-full pulse-dot">
+                  active
+                </span>
+
+                <!-- Status badge (non-active) -->
+                <span x-show="!bead.active"
+                      class="ml-auto shrink-0 text-xs font-medium px-2 py-0.5 rounded-full"
+                      :class="{
+                        'bg-green-100 text-green-600': bead.status === 'complete',
+                        'bg-red-100 text-red-500': bead.status === 'failed',
+                        'bg-gray-100 text-gray-400': bead.status === 'pending' || bead.status === 'draft',
+                        'bg-orange-100 text-orange-500': bead.status === 'recover',
+                      }"
+                      x-text="bead.status">
+                </span>
+              </div>
+            </template>
+          </div>
+          <div class="px-5 pb-3 text-xs text-gray-400 text-right"
+               x-text="phase.complete + ' of ' + phase.total + ' beads complete'">
+          </div>
+        </div>
+      </div>
+    </template>
+  </main>
+
+  <!-- Loading state -->
+  <div x-show="!data" class="max-w-4xl mx-auto px-6 py-12 text-center text-gray-400">
+    <div class="text-3xl mb-2 pulse-dot">🪡</div>
+    <p>Loading…</p>
+  </div>
+
+  <!-- Footer -->
+  <footer class="max-w-4xl mx-auto px-6 py-6 text-center text-xs text-gray-300">
+    Claude Beads Dashboard · auto-refreshes every 3s
+  </footer>
+
+  <script>
+    function dashboard() {
+      return {
+        data: null,
+        refreshing: false,
+        lastUpdated: null,
+
+        async init() {
+          await this.refresh();
+          setInterval(() => this.refresh(), 3000);
+        },
+
+        async refresh() {
+          this.refreshing = true;
+          try {
+            const res = await fetch('/api/data');
+            const fresh = await res.json();
+            // Preserve open/closed state for phases
+            if (this.data?.phases && fresh.phases) {
+              const openState = {};
+              this.data.phases.forEach(p => { openState[p.num] = p.open; });
+              fresh.phases.forEach(p => {
+                p.open = openState[p.num] !== undefined ? openState[p.num] : p.pct > 0;
+              });
+            } else if (fresh.phases) {
+              fresh.phases.forEach(p => { p.open = p.pct > 0 && p.pct < 100; });
+            }
+            this.data = fresh;
+            const now = new Date();
+            this.lastUpdated = now.toLocaleTimeString();
+          } catch (e) {
+            // server unreachable — keep stale data
+          } finally {
+            this.refreshing = false;
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

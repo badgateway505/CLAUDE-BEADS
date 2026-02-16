@@ -136,6 +136,21 @@ def update():
 
 
 @cli.command()
+@click.option('--port', default=3141, show_default=True, help='Port to serve on')
+@click.option('--no-browser', is_flag=True, default=False, help='Do not open browser automatically')
+def ui(port: int, no_browser: bool):
+    """Open local dashboard — phases, beads, progress."""
+    from beads.ui.server import start_server
+
+    _verify_initialized(Path.cwd())
+    try:
+        start_server(port=port, open_browser=not no_browser)
+    except RuntimeError as e:
+        console.print(f"[red]❌ {e}[/red]")
+        raise click.Abort()
+
+
+@cli.command()
 def sync():
     """Sync framework files (hooks, FSM, settings) to current project."""
     from beads.sync import sync_project
