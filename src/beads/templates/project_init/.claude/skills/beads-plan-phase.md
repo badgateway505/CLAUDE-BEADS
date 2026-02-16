@@ -8,6 +8,18 @@ Decompose a phase into atomic, model-optimized beads.
 
 ## Execution Protocol
 
+### Step 0: Check Previous Phase is Closed (MANDATORY)
+
+Run this FIRST before doing anything else:
+
+```bash
+python3 .beads/bin/fsm.py check-phase-closed XX
+```
+
+Where `XX` is the phase number you're planning (e.g. `02` for Phase 02).
+
+If it exits with an error — STOP. Tell the user to run `/beads:close-phase` first.
+
 ### Step 1: Read Phase Context
 
 Use the Read tool to read:

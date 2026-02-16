@@ -922,6 +922,38 @@ def main():
         elif command == "validate-project":
             validate_project()
 
+        elif command == "check-phase-closed":
+            if len(sys.argv) < 3:
+                print("Usage: fsm.py check-phase-closed <phase-num>")
+                sys.exit(1)
+            phase_num = sys.argv[2].lstrip("0") or "0"
+            phase_num_padded = sys.argv[2].zfill(2)
+            if int(phase_num) <= 1:
+                # Phase 01 has no previous phase to check
+                sys.exit(0)
+            prev_phase = str(int(phase_num) - 1).zfill(2)
+            if not fsm.LEDGER_FILE.exists():
+                print(f"✗ Ledger not found")
+                sys.exit(1)
+            try:
+                data = json.loads(fsm.LEDGER_FILE.read_text())
+            except json.JSONDecodeError:
+                print("✗ Ledger is not valid JSON")
+                sys.exit(1)
+            for phase in data.get("roadmap", []):
+                if phase.get("phase") == prev_phase and phase.get("status") == "closed":
+                    sys.exit(0)
+            print("")
+            print("=" * 65)
+            print(f"  BLOCKED: Phase {prev_phase} is not closed yet")
+            print("=" * 65)
+            print("")
+            print(f"  You must close Phase {prev_phase} before planning Phase {phase_num_padded}.")
+            print("")
+            print("  Run: /beads:close-phase")
+            print("")
+            sys.exit(1)
+
         else:
             print(f"Unknown command: {command}")
             print(__doc__)
