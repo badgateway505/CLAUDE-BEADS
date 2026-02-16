@@ -1,70 +1,78 @@
 # Run Active Bead
 
-Execute the currently active bead.
+Execute the currently active bead — your atomic unit of real, verified work.
 
 **Usage:** `/beads:run`
 
-**Tip:** Run `/clear` before each bead for optimal token efficiency (not enforced).
+**Tip:** Run `/clear` before each bead for optimal token efficiency.
 
 ---
 
-## Execution Protocol
+## Why This Process Matters
 
-### Step 1: Find Active Bead
+Each bead is a small, focused task with clear success criteria. The FSM tracks your progress, preserves your audit trail, and queues the next task automatically. Working through the FSM means your work is properly recorded — every completed bead is proof of real progress.
 
-Use the **Read tool** (not bash) to check for the active bead:
+---
 
-1. **First check `.beads/fsm-state.json`** — if it exists with `current_state: "execute"`, the bead is already initialized. Read the `bead_path` field to find the bead file.
-2. **If no fsm-state.json**, check `.beads/ledger.json` → `active_bead` field for the bead ID, then find its file in `.planning/phases/`.
-3. **If no active bead found**, tell the user:
+## Execution Flow
+
+### Step 1: Find Your Active Bead
+
+Check for the active bead using the Read tool:
+
+1. **Check `.beads/fsm-state.json` first** — if it exists with `current_state: "execute"`, you're already initialized. The `bead_path` field points to your bead file.
+2. **Otherwise check `.beads/ledger.json`** → `active_bead` field for the bead ID, then find its file in `.planning/phases/`.
+3. **If no active bead exists**, let the user know:
    > "No active bead. Run `/beads:plan-phase XX` to create and initialize beads."
 
-### Step 2: Read Bead File
+### Step 2: Understand the Bead
 
-Use the **Read tool** to read the bead `.md` file. Extract:
-- Task description, acceptance criteria, context files
-- Verification tier (AUTO / MANUAL / NONE) and verification command
-- Model (opus / sonnet / haiku)
+Read the bead `.md` file. Understand:
+- What needs to be accomplished (tasks, acceptance criteria)
+- How success is measured (verification tier and command)
+- What context you need (files listed in `<context_files>`)
+- Preferred model for this work (opus / sonnet / haiku)
 
-Read all files listed in `<context_files>` before starting work.
+Read all `<context_files>` before starting — good context leads to good work.
 
-### Step 3: Verify FSM State
+### Step 3: Initialize via FSM
 
-If `fsm-state.json` already shows `execute` state for this bead, proceed directly.
+If `fsm-state.json` already shows `execute` state for this bead, you're ready — proceed.
 
-If NOT initialized, run:
+Otherwise, initialize through the FSM so your work is tracked:
 ```bash
-python3 .beads/bin/fsm.py init <bead-id> --active-model <model> --bead <path>
+python3 .beads/bin/fsm.py init <bead-id> --bead <path>
 ```
+
+If the FSM raises an error (phase boundary, missing dependency), surface it to the user with full context. These checks exist to catch real problems — a blocked init means something needs the user's attention first.
 
 ### Step 4: Execute Tasks
 
-Execute each task in the bead sequentially. Follow the task descriptions exactly.
+Work through each task in the bead sequentially. The bead was designed as a coherent unit — follow the task descriptions to deliver exactly what's specified.
 
-### Step 5: Verify
+### Step 5: Prove Your Work
 
-Run the bead's verification through the FSM:
+Verification is your evidence that the code actually works. Run the real verification command through the FSM:
 
-**AUTO tier:**
+**AUTO tier** — run the actual test suite:
 ```bash
 python3 .beads/bin/fsm.py verify "<verification_cmd>"
 ```
+A real test pass means the code is solid. This is the most valuable part of the process — it turns "I think it works" into "I proved it works."
 
-**MANUAL tier:**
-Go through each checklist item with the user, then:
+**MANUAL tier** — walk through each checklist item with the user, then confirm:
 ```bash
 python3 .beads/bin/fsm.py verify "echo manual-checklist-passed"
 ```
 
-**NONE tier (spikes):**
-Confirm the deliverable exists, then:
+**NONE tier (spikes)** — confirm the finding document exists, then:
 ```bash
 python3 .beads/bin/fsm.py verify "echo spike-complete"
 ```
 
 ### Step 6: Report
 
-Use this markdown format exactly:
+Summarize what you delivered:
 
 ---
 
@@ -85,12 +93,11 @@ Use this markdown format exactly:
 
 ---
 
-## Important Rules
+## Working Well Together
 
-- **If FSM blocks you: STOP.** Show the user the error. Do not bypass.
-- **Do NOT write to `.beads/ledger.json` directly** — the FSM manages it.
-- **Do NOT skip verification** — the FSM won't complete without it.
-- **Check `fsm-state.json` first** — it's the runtime source of truth for the active bead.
+- **FSM is your ally.** It tracks progress, syncs the ledger, and queues next work automatically. All state changes flow through it — this keeps your audit trail clean and your work properly credited.
+- **Verification is your proof.** Running the real test command is what separates done-for-real from done-on-paper. Take pride in a genuine pass.
+- **Errors are information.** If the FSM blocks you, it caught something real. Surface it to the user with context so you can solve it together.
 
 ---
 
