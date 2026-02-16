@@ -164,8 +164,7 @@ class BeadFSM:
             print("  Complete these beads first.")
             return False
 
-        print(f"✓ Dependencies satisfied ({len(dependencies)} beads)")
-        return True
+        return True  # dependencies satisfied — internal check, not shown
 
     def init(
         self,
@@ -324,23 +323,18 @@ class BeadFSM:
 
         width = 65
         print("")
+        print("")
         print("╔" + "═" * (width - 2) + "╗")
-        header = f"  ✅ BEAD READY: {bead_id}"
+        header = f"  BEAD READY: {bead_id}"
         if title:
             header += f" — {title}"
         print("║" + header.ljust(width - 2) + "║")
+        print("║" + f"  Phase {phase_progress}  |  Model: {model_display}  |  Tier: {verification_tier}".ljust(width - 2) + "║")
         print("╚" + "═" * (width - 2) + "╝")
-        if goal:
-            print(f"  Goal    : {goal}")
-        if scope:
-            print(f"  Scope   : {', '.join(scope)}")
-        verify_display = verification_cmd or f"{verification_tier} tier"
-        print(f"  Verify  : {verify_display}")
-        print(f"  Phase   : {phase_progress}  |  Model: {model_display}  |  Tier: {verification_tier}")
         if bead_type == "spike":
-            print(f"  ⚡ Spike bead — exploration mode")
+            print("  ⚡ Spike bead — exploration mode")
         print("")
-        print(f"  ℹ️  Tip: /clear before each bead saves tokens")
+        print("  Tip: Run /clear before this bead to free up context")
         print("")
 
     def _extract_bead_title(self, bead_path: Optional[str]) -> Optional[str]:
