@@ -919,6 +919,54 @@ def main():
             success = fsm.sync_ledger()
             sys.exit(0 if success else 1)
 
+        elif command == "close-phase":
+            if len(sys.argv) < 3:
+                print("Usage: fsm.py close-phase <phase-num>")
+                sys.exit(1)
+            phase_num = sys.argv[2].zfill(2)
+            if not fsm.LEDGER_FILE.exists():
+                print("✗ Ledger not found")
+                sys.exit(1)
+            try:
+                data = json.loads(fsm.LEDGER_FILE.read_text())
+            except json.JSONDecodeError:
+                print("✗ Ledger is not valid JSON")
+                sys.exit(1)
+
+            # Check all beads in this phase are complete
+            beads = data.get("beads", {})
+            incomplete = [
+                bid for bid, info in beads.items()
+                if info.get("phase") == phase_num and info.get("status") not in ("complete", "skip")
+            ]
+            if incomplete:
+                print("")
+                print("=" * 65)
+                print(f"  BLOCKED: Phase {phase_num} has incomplete beads")
+                print("=" * 65)
+                print("")
+                for bid in sorted(incomplete):
+                    print(f"  ✗ Bead {bid}: {beads[bid].get('status', 'unknown')}")
+                print("")
+                print("  Complete all beads before closing the phase.")
+                print("")
+                sys.exit(1)
+
+            # Mark phase closed in roadmap
+            marked = False
+            for phase in data.setdefault("roadmap", []):
+                if phase.get("phase") == phase_num:
+                    phase["status"] = "closed"
+                    marked = True
+                    break
+            if not marked:
+                # Phase not in roadmap yet — add it
+                data["roadmap"].append({"phase": phase_num, "status": "closed"})
+
+            data["active_bead"] = None
+            fsm.LEDGER_FILE.write_text(json.dumps(data, indent=2))
+            print(f"✓ Phase {phase_num} closed")
+
         elif command == "validate-project":
             validate_project()
 
