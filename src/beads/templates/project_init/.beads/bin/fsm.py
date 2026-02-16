@@ -124,7 +124,7 @@ class BeadFSM:
 
     def _check_dependencies_simple(self, bead_path: str) -> bool:
         """
-        Simple dependency check - verify depends_on beads are marked [x] in ledger.
+        Simple dependency check - verify depends_on beads are complete in ledger JSON.
         Returns True if all dependencies satisfied.
         """
         bead_file = Path(bead_path)
@@ -142,19 +142,26 @@ class BeadFSM:
 
         dependencies = [d.strip().strip('"\'') for d in depends_str.split(',')]
         if not self.LEDGER_FILE.exists():
-            print(f"⚠ Cannot validate dependencies - ledger not found")
+            print("⚠ Cannot validate dependencies - ledger not found")
             return True
 
-        ledger_content = self.LEDGER_FILE.read_text()
+        try:
+            data = json.loads(self.LEDGER_FILE.read_text())
+        except json.JSONDecodeError:
+            print("⚠ Cannot validate dependencies - ledger is not valid JSON")
+            return True
+
+        beads = data.get("beads", {})
         incomplete = []
         for dep in dependencies:
             dep_id = '-'.join(dep.split('-')[:2])
-            if not re.search(rf'\[x\]\s+Bead[- ]{dep_id}', ledger_content, re.IGNORECASE):
+            bead_entry = beads.get(dep_id, {})
+            if bead_entry.get("status") != "complete":
                 incomplete.append(dep_id)
 
         if incomplete:
             print(f"✗ Incomplete dependencies: {', '.join(f'Bead-{d}' for d in incomplete)}")
-            print(f"  Complete these beads first.")
+            print("  Complete these beads first.")
             return False
 
         print(f"✓ Dependencies satisfied ({len(dependencies)} beads)")
@@ -177,7 +184,7 @@ class BeadFSM:
         current_phase = self._extract_phase_number(bead_id)
         if current_phase and int(current_phase) > 1:
             prev_phase = f"{int(current_phase) - 1:02d}"
-            ledger_content = self.LEDGER_FILE.read_text() if self.LEDGER_FILE.exists() else ""
+            ledger_content = self.LEDGER_FILE.read_text() if self.LEDGER_FILE.exists() else "{}"
 
             # Check if previous phase is closed
             if not self._is_phase_closed(ledger_content, prev_phase):
@@ -226,6 +233,10 @@ class BeadFSM:
         # Check dependencies
         if bead_path and not self._check_dependencies_simple(bead_path):
             sys.exit(1)
+
+        # Register all phase beads in ledger so _find_next_pending_bead works
+        if current_phase and bead_path:
+            self._register_phase_beads(current_phase, bead_id)
 
         # Extract model, verification_cmd, bead_type, and verification_tier from bead file
         bead_type = "implementation"  # default
@@ -443,14 +454,16 @@ class BeadFSM:
         return True
 
     def _get_phase_progress(self, current_phase: Optional[str]) -> str:
-        """Return 'Phase X of Y' from ledger roadmap table."""
+        """Return 'Phase X of Y' from ledger roadmap."""
         if not current_phase or not self.LEDGER_FILE.exists():
             return current_phase or "?"
-        content = self.LEDGER_FILE.read_text()
-        # Count data rows in the Roadmap Overview table (lines like "| 1 | ...")
-        total = len(re.findall(r'^\|\s*\d+\s*\|', content, re.MULTILINE))
-        if total:
-            return f"{int(current_phase)} of {total}"
+        try:
+            data = json.loads(self.LEDGER_FILE.read_text())
+            total = len(data.get("roadmap", []))
+            if total:
+                return f"{int(current_phase)} of {total}"
+        except (json.JSONDecodeError, TypeError):
+            pass
         return current_phase
 
     def _extract_phase_number(self, bead_id: str) -> Optional[str]:
@@ -460,24 +473,55 @@ class BeadFSM:
 
     def _is_phase_closed(self, ledger_content: str, phase_num: str) -> bool:
         """Check if phase is marked as CLOSED in ledger."""
-        pattern = rf'Phase {phase_num}.*?:.*?CLOSED'
-        return bool(re.search(pattern, ledger_content, re.IGNORECASE))
+        try:
+            data = json.loads(ledger_content)
+            for phase in data.get("roadmap", []):
+                if phase.get("phase") == phase_num:
+                    return phase.get("status") == "closed"
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return False
 
-    def _is_last_bead_in_phase(self, current_bead_id: str, ledger_content: str) -> bool:
+    def _is_last_bead_in_phase(self, current_bead_id: str, ledger_data: dict) -> bool:
         """Check if current bead is the last in its phase."""
         current_phase = self._extract_phase_number(current_bead_id)
         if not current_phase:
             return False
 
-        # Find next pending bead
-        next_bead = self._find_next_pending_bead(ledger_content)
+        next_bead = self._find_next_pending_bead(ledger_data)
         if not next_bead:
-            # No more pending beads
             return True
 
         next_phase = self._extract_phase_number(next_bead)
-        # If next bead is in a different phase, current is last in phase
         return next_phase != current_phase
+
+    def _register_phase_beads(self, phase_num: str, active_bead_id: str):
+        """Register all bead files in a phase into ledger.json as pending."""
+        if not self.LEDGER_FILE.exists():
+            return
+        try:
+            data = json.loads(self.LEDGER_FILE.read_text())
+        except json.JSONDecodeError:
+            return
+
+        beads = data.setdefault("beads", {})
+        planning_dir = Path(".planning/phases")
+
+        for phase_dir in planning_dir.iterdir():
+            if phase_dir.is_dir() and phase_dir.name.startswith(f"{phase_num}-"):
+                beads_dir = phase_dir / "beads"
+                if not beads_dir.exists():
+                    continue
+                for bead_file in sorted(beads_dir.glob(f"{phase_num}-*.md")):
+                    # Extract short bead ID (XX-YY) from filename like 01-03-some-slug.md
+                    match = re.match(r'(\d{2}-\d{2})', bead_file.stem)
+                    if not match:
+                        continue
+                    bid = match.group(1)
+                    if bid not in beads:
+                        beads[bid] = {"status": "pending", "phase": phase_num}
+
+        self.LEDGER_FILE.write_text(json.dumps(data, indent=2))
 
     def _phase_beads_exist(self, phase_num: str) -> bool:
         """Check if beads exist for given phase in .planning/phases/."""
@@ -493,19 +537,19 @@ class BeadFSM:
                 return len(bead_files) > 0
         return False
 
-    def _find_next_pending_bead(self, ledger_content: str) -> Optional[str]:
-        """Find first pending bead in ledger."""
-        pattern = r'- \[ \] Bead[- ](\d{2}[- ]\d{2})'
-        match = re.search(pattern, ledger_content, re.IGNORECASE)
-        if match:
-            return match.group(1).replace(' ', '-')
+    def _find_next_pending_bead(self, ledger_data: dict) -> Optional[str]:
+        """Find first pending bead in ledger (by bead ID sort order)."""
+        beads = ledger_data.get("beads", {})
+        pending = [bid for bid, info in beads.items() if info.get("status") == "pending"]
+        if pending:
+            pending.sort()
+            return pending[0]
         return None
 
     def sync_ledger(self) -> bool:
         """
         Sync FSM state to ledger.json.
-        Updates Active Bead section and marks completed beads with [x].
-        Auto-queues next pending bead when current completes.
+        Updates active_bead, marks completed beads, auto-queues next.
         """
         if not self.context:
             print("✗ FSM not initialized")
@@ -515,59 +559,56 @@ class BeadFSM:
             print(f"✗ Ledger not found: {self.LEDGER_FILE}")
             return False
 
-        content = self.LEDGER_FILE.read_text()
+        try:
+            data = json.loads(self.LEDGER_FILE.read_text())
+        except json.JSONDecodeError:
+            print("✗ Ledger is not valid JSON")
+            return False
+
         bead_id = self.context.bead_id
         state = self.context.current_state
+        beads = data.setdefault("beads", {})
 
-        # Mark current bead complete in ledger history
+        # Register bead if not already tracked
+        if bead_id not in beads:
+            phase = self._extract_phase_number(bead_id)
+            beads[bead_id] = {"status": "pending", "phase": phase}
+
+        # Update bead status
+        beads[bead_id]["status"] = state
         if state == 'complete':
-            already_complete = re.search(rf'\[x\] Bead[- ]{bead_id}[:\s]', content, re.IGNORECASE)
-            if not already_complete:
-                pattern = rf'(- )\[ \]( Bead[- ]{bead_id}[:\s])'
-                content, n = re.subn(pattern, r'\1[x]\2', content, count=1, flags=re.IGNORECASE)
-                if n > 0:
-                    print(f"✓ Marked Bead-{bead_id} complete in ledger")
+            print(f"✓ Marked Bead-{bead_id} complete in ledger")
 
-        # Update Active Bead section
+        # Update active bead
         if state in ['complete', 'failed']:
-            next_bead = self._find_next_pending_bead(content)
-
             # Check for phase completion
-            if state == 'complete' and self._is_last_bead_in_phase(bead_id, content):
+            if state == 'complete' and self._is_last_bead_in_phase(bead_id, data):
                 current_phase = self._extract_phase_number(bead_id)
                 print("")
                 print("=" * 65)
-                print(f"🎉🎉🎉 PHASE {current_phase} COMPLETE! 🎉🎉🎉")
+                print(f"  PHASE {current_phase} COMPLETE!")
                 print("=" * 65)
                 print("")
-                print(f"✅ All beads in Phase {current_phase} verified and committed")
-                print(f"📦 Phase ready to freeze")
+                print(f"  All beads in Phase {current_phase} verified and committed")
+                print(f"  Phase ready to freeze")
                 print("")
-                print("➡️  REQUIRED NEXT STEP:")
+                print("  REQUIRED NEXT STEP:")
                 print("   /beads:close-phase")
                 print("")
-                print("⚠️  DO NOT proceed to next phase without freezing this one first!")
+                print("  DO NOT proceed to next phase without freezing this one first!")
                 print("=" * 65)
                 print("")
 
+            next_bead = self._find_next_pending_bead(data)
             if next_bead:
-                new_active = f"## Active Bead\n\n**Bead-{next_bead}**: PENDING\n"
+                data["active_bead"] = next_bead
                 print(f"✓ Auto-queued: Bead-{next_bead}")
             else:
-                new_active = f"## Active Bead\n\n**None** — All beads complete\n"
+                data["active_bead"] = None
         else:
-            new_active = f"## Active Bead\n\n**Bead-{bead_id}**: {state.upper()}\n"
-            if self.context.retry_count > 0:
-                new_active += f"- Retry: {self.context.retry_count}/{self.MAX_RETRIES}\n"
+            data["active_bead"] = bead_id
 
-        # Replace Active Bead section
-        pattern = r'## Active Bead\n+.*?(?=\n---|\n## |\Z)'
-        if re.search(pattern, content, re.DOTALL):
-            content = re.sub(pattern, new_active.rstrip(), content, flags=re.DOTALL)
-        else:
-            content += f"\n---\n\n{new_active}"
-
-        self.LEDGER_FILE.write_text(content)
+        self.LEDGER_FILE.write_text(json.dumps(data, indent=2))
         print(f"✓ Ledger synced: Bead-{bead_id} → {state}")
         return True
 
