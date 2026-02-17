@@ -43,6 +43,15 @@ reference:
 
 ---
 
+<pitfalls>
+Known risks or traps for this bead. The executor must address these during the Challenge step before writing code.
+
+- [Risk/trap #1 — what could go wrong and why]
+- [Risk/trap #2 — common wrong assumption]
+</pitfalls>
+
+---
+
 <tasks>
 Execute sequentially. Each step is atomic.
 

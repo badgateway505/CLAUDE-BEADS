@@ -60,17 +60,23 @@ Claude CANNOT modify `ledger.json`, `fsm-state.json`, or hook scripts directly.
 
 4. **Context Isolation:** **Never** read frozen phases – use `XX-SUMMARY.md` instead.
 
-5. **Execute Tasks:** Complete tasks in order. One atomic commit per logical change.  
-    &nbsp;&nbsp;- **CRITICAL:** Execute Edit operations **sequentially**, never in parallel (prevent UI hangs)  
-    &nbsp;&nbsp;- Multiple edits on the same file **must** be sequential (wait for first to complete before the second)  
+5. **Challenge (Zero Trust to First Conclusion):** Before writing any code, state your planned approach and identify at least one concrete risk — a way it could fail, a wrong assumption, or a better alternative you're dismissing.
+    &nbsp;&nbsp;- If the risk is valid, adjust the approach before proceeding
+    &nbsp;&nbsp;- If you cannot find a risk, state why the approach is straightforward
+    &nbsp;&nbsp;- This step prevents sycophantic execution (blindly doing what seems expected)
+    &nbsp;&nbsp;- **Post-hoc reinforcement:** After each verification failure, analyze root cause before retrying (see Failure Handling)
+
+6. **Execute Tasks:** Complete tasks in order. One atomic commit per logical change.  
+    &nbsp;&nbsp;- **CRITICAL:** Execute Edit operations **sequentially**, never in parallel (prevent UI hangs)
+    &nbsp;&nbsp;- Multiple edits on the same file **must** be sequential (wait for first to complete before the second)
     &nbsp;&nbsp;- Parallel tool calls are allowed only for independent Read/Grep operations
 
-6. **Verify (auto-transitions to COMPLETE):** Execute silently. Report: "✅ Verified" or "❌ Failed"  
+7. **Verify (auto-transitions to COMPLETE):** Execute silently. Report: "✅ Verified" or "❌ Failed"  
     &nbsp;&nbsp;- Runs verification command  
     &nbsp;&nbsp;- On success: auto-transitions to COMPLETE, marks bead [x] in ledger, queues next bead  
     &nbsp;&nbsp;- On failure: retry logic (circuit breaker after 3 attempts)
 
-7. **Freeze:** When phase completes, add detailed files to `.claudeignore`
+8. **Freeze:** When phase completes, add detailed files to `.claudeignore`
 
 ---
 
@@ -279,11 +285,15 @@ the scope of changes needed.
 
 ---
 
-## Failure Handling (Circuit Breaker)
+## Failure Handling (Circuit Breaker + Post-Hoc NSR)
 
-- **Attempt 1:** Soft retry – self-correction, same approach
-- **Attempt 2:** Hard rollback – `git reset --hard [initial_sha]` + strategic pivot
-- **Attempt 3:** Circuit breaker — STOP and request human intervention
+Before each retry, perform **root-cause analysis** — state what specifically went wrong and why. Blind retries are prohibited.
+
+- **Attempt 1:** Diagnose → state root cause → soft retry with targeted fix
+- **Attempt 2:** Diagnose → state why attempt 1 fix was insufficient → hard rollback (`git reset --hard [initial_sha]`) + strategic pivot (different approach, not a variation of the same one)
+- **Attempt 3:** Circuit breaker — STOP and request human intervention. Include: (1) what was tried, (2) why each attempt failed, (3) what you suspect but cannot verify
+
+**Post-hoc lesson:** On any failure, record a one-line takeaway in the commit message or session notes. This feeds forward into future beads as accumulated project knowledge.
 
 ---
 

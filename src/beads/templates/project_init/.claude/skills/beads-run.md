@@ -46,11 +46,17 @@ python3 .beads/bin/fsm.py init <bead-id> --bead <path>
 
 If the FSM raises an error (phase boundary, missing dependency), surface it to the user with full context. These checks exist to catch real problems — a blocked init means something needs the user's attention first.
 
-### Step 4: Execute Tasks
+### Step 4: Challenge Your Approach (Zero Trust)
+
+Before writing code, state your planned approach and find at least one concrete way it could fail — a wrong assumption, an edge case, a better alternative. If the risk is valid, adjust. If the approach is genuinely straightforward, say why in one sentence.
+
+This is not a ritual. It prevents the most common failure mode: committing to the first idea that "feels right" without stress-testing it.
+
+### Step 5: Execute Tasks
 
 Work through each task in the bead sequentially. The bead was designed as a coherent unit — follow the task descriptions to deliver exactly what's specified.
 
-### Step 5: Prove Your Work
+### Step 6: Prove Your Work
 
 Verification is your evidence that the code actually works. Run the real verification command through the FSM:
 
@@ -70,7 +76,7 @@ python3 .beads/bin/fsm.py verify "echo manual-checklist-passed"
 python3 .beads/bin/fsm.py verify "echo spike-complete"
 ```
 
-### Step 6: Report
+### Step 7: Report
 
 Summarize what you delivered:
 
@@ -98,6 +104,7 @@ Summarize what you delivered:
 - **FSM is your ally.** It tracks progress, syncs the ledger, and queues next work automatically. All state changes flow through it — this keeps your audit trail clean and your work properly credited.
 - **Verification is your proof.** Running the real test command is what separates done-for-real from done-on-paper. Take pride in a genuine pass.
 - **Errors are information.** If the FSM blocks you, it caught something real. Surface it to the user with context so you can solve it together.
+- **On failure, diagnose before retrying.** State what went wrong and why before attempting a fix. Blind retries waste tokens and repeat mistakes. A different approach beats a tweaked version of the same one.
 
 ---
 
