@@ -9,13 +9,13 @@ source "$(dirname "$0")/error-lock.sh"
 # Authorized fsm.py commands — SAFE subset only
 # These are the ONLY fsm.py subcommands Claude may run
 SAFE_FSM="(init|verify|sync-ledger|status|close-phase|check-phase-closed|validate-project)"
-if echo "$COMMAND" | grep -qE "(^|&&\s*)python3?\s+(\./)?\.beads/bin/fsm\.py\s+${SAFE_FSM}(\s|$)"; then
+if echo "$COMMAND" | grep -qE "(^|&&\s*)python3?\s+([^[:space:]]*/)?\.beads/bin/fsm\.py\s+${SAFE_FSM}(\s|$)"; then
   exit 0
 fi
 
 # BLOCKED fsm.py commands — destructive or bypass vectors, user-only
 DANGEROUS_FSM="(rollback|transition|reset)"
-if echo "$COMMAND" | grep -qE "(^|&&\s*)python3?\s+(\./)?\.beads/bin/fsm\.py\s+${DANGEROUS_FSM}(\s|$)"; then
+if echo "$COMMAND" | grep -qE "(^|&&\s*)python3?\s+([^[:space:]]*/)?\.beads/bin/fsm\.py\s+${DANGEROUS_FSM}(\s|$)"; then
   FSM_SUBCMD=$(echo "$COMMAND" | grep -oE "(rollback|transition|reset)")
   echo "BLOCK: 'fsm.py $FSM_SUBCMD' is a destructive command — user-only." >&2
   echo "" >&2
@@ -29,7 +29,7 @@ if echo "$COMMAND" | grep -qE "(^|&&\s*)python3?\s+(\./)?\.beads/bin/fsm\.py\s+$
 fi
 
 # Authorized router.py commands
-if echo "$COMMAND" | grep -qE '^python3?\s+(\./)?\.beads/bin/router\.py\s'; then
+if echo "$COMMAND" | grep -qE '^python3?\s+([^[:space:]]*/)?\.beads/bin/router\.py\s'; then
   exit 0
 fi
 
