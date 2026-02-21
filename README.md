@@ -45,11 +45,11 @@ Prompting "please follow the workflow" is pathetic. Rules aren't suggestions. Be
 
 My workflow is a closed loop. No drift, no excuses.
 
-**01. The Plan.** `/beads:plan-project`. Evaluate the idea. If it's trash, stop here.
-**02. The Proof.** `/beads:plan-phase 01`. Build the "paperboard engine." Minimal beads, maximum risk.
-**03. The Execute.** `/beads:run`. Atomically build, verify, and commit.
-**04. The Gate.** `/beads:close-phase`. The moment of truth: **Continue, Pivot, or Kill.**
-**05. The Scale.** If (and only if) validated, move to features and infrastructure.
+**01. The Plan.** `/beads:plan-project`. Evaluate the idea. If it's trash, stop here.  
+**02. The Proof.** `/beads:plan-phase 01`. Build the "paperboard engine." Minimal beads, maximum risk.  
+**03. The Execute.** `/beads:run`. Atomically build, verify, and commit.  
+**04. The Gate.** `/beads:close-phase`. The moment of truth: **Continue, Pivot, or Kill.**  
+**05. The Scale.** If (and only if) validated, move to features and infrastructure.  
 
 ---
 
