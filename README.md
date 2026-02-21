@@ -8,7 +8,7 @@ Test ideas quickly. Build only what survived.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-[Philosophy](#-philosophy) · [The Authority](#-the-authority) · [The Protocol](#-the-protocol) · [Get Started](#-get-started) · [Infrastructure](#-infrastructure) · [Commands](#-commands)
+[Philosophy](#-philosophy) · [Authority](#-the-authority) · [Protocol](#-the-protocol) · [Get Started](#-get-started) · [Infrastructure](#-infrastructure) · [Commands](#-commands)
 
 </div>
 
@@ -30,7 +30,7 @@ Most AI projects fail because you spend three days building architecture for an 
 
 ---
 
-## 🛠 The Authority
+## 🛠 Authority
 
 Prompting "please follow the workflow" is pathetic. Rules aren't suggestions. Beads replaces "please" with physical enforcement.
 
@@ -41,7 +41,7 @@ Prompting "please follow the workflow" is pathetic. Rules aren't suggestions. Be
 
 ---
 
-## ⚡ The Protocol
+## ⚡ Protocol
 
 My workflow is a closed loop. No drift, no excuses.
 
