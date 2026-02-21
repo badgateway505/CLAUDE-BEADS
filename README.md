@@ -1,6 +1,6 @@
 <div align="center">
 
-# Beads v2.0
+# Beads
 
 Claude is a chaotic mess of tokens and broken promises. I built Beads to put it in a cage and make it work.
 
