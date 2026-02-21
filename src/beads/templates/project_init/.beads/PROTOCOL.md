@@ -80,6 +80,18 @@ Claude CANNOT modify `ledger.json`, `fsm-state.json`, or hook scripts directly.
 
 ---
 
+## Validation-First Ideology
+
+**Prove the idea works before investing in architecture.**
+
+- **Phase 01 is always proof-of-concept.** The "paperboard engine" — minimal code that proves the core function works. No infrastructure, no polish, no error handling beyond what's needed to run the demo.
+- **After Phase 01: structured evaluation.** The user decides: **Continue** (idea validates, proceed), **Pivot** (adjust direction, re-plan), or **Kill** (shelve the project). This happens in `/beads:close-phase` for Phase 01 only.
+- **Phase ordering: core function → user-facing features → infrastructure → polish.** Don't build foundations before validating the idea. Don't add error handling before the feature works. Don't optimize before the user is happy.
+- **"Minimal, not sloppy."** Small is good. Careless is not. Phase 01 code should be simple and readable — just not production-hardened. Write clean code, skip the scaffolding.
+- **Don't invest in architecture until the idea is validated.** Config systems, database schemas, auth flows, CI pipelines — all of these are wasted work if the core idea doesn't hold up. Build them in later phases, after Phase 01 proves the concept.
+
+---
+
 ## Spike Bead Protocol (Exploration Mode)
 
 **Spike beads** are time-boxed explorations that produce findings, not production code.

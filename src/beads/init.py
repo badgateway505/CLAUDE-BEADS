@@ -28,6 +28,9 @@ def initialize_project(project_root: Path, project_name: str, vision: str, goals
     # 3. Create PROJECT.md
     _create_project_md(project_root, project_name, vision, goals)
 
+    # 3b. Create DECISIONS.md
+    _create_decisions_md(project_root)
+
     # 4. Update CLAUDE.md
     _update_claude_md(project_root, project_name)
 
@@ -81,6 +84,12 @@ def _copy_templates(project_root: Path):
     shutil.copy2(claude_src / "skills.yaml", claude_dst / "skills.yaml")
     shutil.copytree(claude_src / "skills", claude_dst / "skills", dirs_exist_ok=True)
 
+    # Copy .claude/rules/ (modular rule files — keep CLAUDE.md lean)
+    rules_src = claude_src / "rules"
+    if not rules_src.exists():
+        raise RuntimeError(f"Rule files not found at {rules_src}. Package may be corrupted — reinstall claude-beads.")
+    shutil.copytree(rules_src, claude_dst / "rules", dirs_exist_ok=True)
+
     # Copy .claude/hooks/ (State Guard) — mandatory, fail loudly if missing
     hooks_src = claude_src / "hooks"
     if not hooks_src.exists():
@@ -120,6 +129,7 @@ _MANDATORY_FILES = [
     ".claude/hooks/error-tracker.sh",
     ".claude/settings.json",
     ".claude/skills.yaml",
+    ".claude/rules/beads-context-rules.md",
     "CLAUDE.md",
 ]
 
@@ -192,6 +202,26 @@ def _create_project_md(project_root: Path, project_name: str, vision: str, goals
     project_md.write_text(content)
 
 
+def _create_decisions_md(project_root: Path):
+    """Create .planning/DECISIONS.md. Persistent architectural rationale log."""
+    decisions_md = project_root / ".planning" / "DECISIONS.md"
+    if decisions_md.exists():
+        return
+
+    content = f"""# Architectural Decisions
+
+Persistent record of WHY technical choices were made. Survives phase closures — never `.claudeignore`d.
+
+Before proposing alternatives to a recorded decision, read the rationale first. Contradicting a prior decision without understanding its context leads to inconsistent architecture.
+
+| Decision | Rationale | Phase | Alternatives Considered |
+|----------|-----------|-------|------------------------|
+
+*Created: {_today()}*
+"""
+    decisions_md.write_text(content)
+
+
 def _update_claude_md(project_root: Path, project_name: str):
     """Update or create CLAUDE.md with Beads section."""
     claude_md = project_root / "CLAUDE.md"
@@ -199,26 +229,15 @@ def _update_claude_md(project_root: Path, project_name: str):
     beads_section = """
 ## 🧠 Beads Workflow (Beads v)
 
-**When executing beads, read `.beads/PROTOCOL.md` for the full execution protocol.**
+**Protocol:** `.beads/PROTOCOL.md` — read before executing any bead.
 
 **Quick reference:**
-1. Read `.beads/ledger.json` first for project state
+0. Run `/clear` before each bead (optimal token efficiency)
+1. Read `.beads/ledger.json` for project state
 2. Suggest next pending bead proactively (Next-In-Line protocol)
 3. Run FSM init — validates model, phase boundaries, bead existence
 4. Execute tasks atomically, verify, sync ledger
 5. Use FSM commands silently (report outcomes only)
-
-**Tip:** Run `/clear` before each bead for optimal token efficiency (not enforced).
-
-**State sources:**
-- `.beads/fsm-state.json` — Runtime state (current bead, retries)
-- `.beads/ledger.json` — Historical record (outcomes, costs)
-- Bead files — Templates (task specs, verification commands)
-
-**Context isolation:**
-- Read ONLY: active bead + files in `<context_files>`
-- Use `XX-SUMMARY.md` for frozen phases
-- Never read `.claudeignore` files
 
       IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.
 """

@@ -4,6 +4,8 @@ Freeze the current phase and prepare for the next one.
 
 **Usage:** `/beads:close-phase`
 
+**Why This Matters:** Phase closure freezes context and enables boundary guards. Without it, old bead context pollutes new work, state drifts between phases, and the FSM cannot enforce phase ordering.
+
 ---
 
 ## Execution Protocol
@@ -49,6 +51,41 @@ Create `.planning/phases/XX-phase-name/XX-SUMMARY.md`:
 
 [Anything the next phase needs to know: file paths, patterns, gotchas]
 ```
+
+### Step 3b: Persist Key Decisions
+
+If the phase produced any architectural or technical decisions (recorded in the "Key Decisions" section of the SUMMARY), append them to `.planning/DECISIONS.md`.
+
+This ensures decisions survive phase closure. The SUMMARY gets `.claudeignore`d, but DECISIONS.md persists across all phases.
+
+### Step 3c: Phase 01 Evaluation Gate
+
+**Only for Phase 01.** For all other phases, skip to Step 4.
+
+Phase 01 is the proof-of-concept. Before moving on, the user needs to decide whether the core idea validated. Present a structured evaluation:
+
+1. **Summarize what was built** vs the core function defined in `.planning/PROJECT.md` (`## Core Function` section).
+
+2. **Give your honest assessment:**
+   > "Here's what Phase 01 proved:
+   >
+   > **What works:** [concrete strengths — what the prototype demonstrated]
+   > **What concerns me:** [honest issues — gaps, limitations, things that felt harder than expected]
+   >
+   > **Does the core function work as you expected?**
+   >
+   > **1** — Continue — the idea validates, proceed to Phase 02
+   > **2** — Pivot — the idea needs adjustment, re-plan before continuing
+   > **3** — Kill — shelve the project, not worth pursuing further"
+
+3. **Record the outcome** in `.planning/DECISIONS.md`:
+   ```markdown
+   | Phase 01 evaluation: [Continue/Pivot/Kill] | [one-line rationale from user] | 01 | — |
+   ```
+
+4. **If Pivot:** Tell the user to update `.planning/PROJECT.md` with the adjusted direction, then re-run `/beads:plan-project` to re-plan the roadmap.
+
+5. **If Kill:** Print "Project shelved after Phase 01 evaluation." and stop. Do not proceed to Step 4.
 
 ### Step 4: Update .claudeignore
 

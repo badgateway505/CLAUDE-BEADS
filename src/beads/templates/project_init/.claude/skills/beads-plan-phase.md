@@ -4,6 +4,8 @@ Decompose a phase into atomic, model-optimized beads.
 
 **Usage:** `/beads:plan-phase XX`
 
+**Why Decomposition Matters:** A phase is too large for a single context window to hold reliably. Decomposing into beads creates atomic units where the model can focus deeply, verify independently, and recover from failure without losing prior work. Each bead carries its own intent and pitfalls — the executor never has to guess WHY a task exists or what traps to avoid.
+
 ---
 
 ## Execution Protocol
@@ -19,6 +21,18 @@ python3 .beads/bin/fsm.py check-phase-closed XX
 Where `XX` is the phase number you're planning (e.g. `02` for Phase 02).
 
 If it exits with an error — STOP. Tell the user to run `/beads:close-phase` first.
+
+### Step 0b: Phase 01 Guidance (if planning Phase 01)
+
+**If `XX` is `01`, apply these constraints throughout decomposition:**
+
+- **Fewer beads** — 1-3 instead of 3-7. Speed over thoroughness.
+- **Minimal code** — just enough to prove the core function works. No project structure, config scaffolding, or error handling beyond what's needed to run the proof-of-concept.
+- **Verification tests the IDEA** — "does the concept work?" not "is the code clean?" Verification commands should prove the core function delivers its intended value.
+- **Skip infrastructure** — no logging setup, no CI, no deployment config, no abstractions. The "paperboard engine" principle: prove it runs before building it properly.
+- **Model: sonnet** — Phase 01 is execution, not architecture. Sonnet is the right tool.
+
+These constraints do NOT apply to Phase 02+. Later phases use standard decomposition rules.
 
 ### Step 1: Read Phase Context
 
@@ -36,9 +50,9 @@ Create 3-7 atomic beads. Each bead must be:
 
 **Bead file location:** `.planning/phases/XX-phase-name/beads/XX-YY-bead-name.md`
 
-**Bead file format:**
+**Bead file format** (must match `.beads/templates/bead.md` structure):
 ```markdown
-# Bead XX-YY: [Task title]
+# Bead XX-YY: [Concise Action Title]
 
 <meta>
 ```yaml
@@ -51,22 +65,68 @@ depends_on: []
 ```
 </meta>
 
-## Task
+---
 
-[Clear description of what to build]
+<intent>
+**Goal**: [Single sentence — what must be accomplished]
 
-## Acceptance Criteria
+**Why**: [Business or architectural reason — what breaks or stalls without this]
 
-- [ ] [Specific, verifiable criterion]
-- [ ] [Specific, verifiable criterion]
+**Success Criteria**:
+- [ ] [Specific, measurable outcome]
+- [ ] [Specific, measurable outcome]
+- [ ] Verification command passes
+</intent>
 
-## Context Files
+---
 
-- `path/to/relevant/file`
+<context_files>
+```yaml
+mandatory:
+  - .beads/ledger.json
+  - [path/to/implementation/target]
 
-## Notes
+reference:
+  - .planning/DECISIONS.md
+  - [XX-SUMMARY.md or XX-RESEARCH.md if applicable]
+```
+</context_files>
 
-[Any implementation hints]
+---
+
+<pitfalls>
+- [Risk #1 — what could go wrong and why]
+- [Risk #2 — common wrong assumption]
+</pitfalls>
+
+---
+
+<tasks>
+Execute sequentially. Each step is atomic.
+
+### 1. [Action Verb + Target]
+- **What**: [Concise description]
+- **Verify**: `[quick check command]`
+
+### 2. [Action Verb + Target]
+- **What**: [Concise description]
+- **Verify**: `[quick check command]`
+
+### 3. Commit
+- **Message**: `[type](XX-YY): [description]`
+- **Files**: [list changed files]
+</tasks>
+
+---
+
+<verification>
+**Tier**: AUTO
+**Command**:
+```bash
+[verification command]
+```
+**Expected**: [what success looks like]
+</verification>
 ```
 
 **Model selection:**

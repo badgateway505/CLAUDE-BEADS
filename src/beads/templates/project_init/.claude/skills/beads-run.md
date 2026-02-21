@@ -12,6 +12,8 @@ Execute the currently active bead — your atomic unit of real, verified work.
 
 Each bead is a small, focused task with clear success criteria. The FSM tracks your progress, preserves your audit trail, and queues the next task automatically. Working through the FSM means your work is properly recorded — every completed bead is proof of real progress.
 
+**Phase 01 note:** When running Phase 01 beads, the goal is validating the idea, not building production code. Keep it minimal. Don't add things not explicitly needed to prove the concept. The first draft should be small and testable, not polished.
+
 ---
 
 ## Execution Flow

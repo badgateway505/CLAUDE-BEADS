@@ -4,6 +4,8 @@ Analyze an existing codebase, detect issues, and prepare PROJECT.md for Beads pl
 
 **Usage:** `/beads:onboard`
 
+**Why This Matters:** Onboarding captures what exists before planning what's next. Skipping this leads to duplicate work, missed constraints, or plans that conflict with existing architecture.
+
 **What it does:**
 This skill is for projects that already have code. It scans the codebase, gathers context from the user, and writes a rich PROJECT.md — without touching existing code or generating a roadmap. Roadmap generation is done separately via `/beads:plan-project`.
 

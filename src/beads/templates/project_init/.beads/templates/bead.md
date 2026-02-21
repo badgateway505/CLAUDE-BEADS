@@ -21,6 +21,8 @@ depends_on: []  # Optional: prerequisite bead IDs
 <intent>
 **Goal**: [Single sentence describing what must be accomplished]
 
+**Why**: [Business or architectural reason this bead exists — what breaks or stalls without it]
+
 **Success Criteria**:
 - [ ] [Specific, measurable outcome #1]
 - [ ] [Specific, measurable outcome #2]
@@ -37,6 +39,7 @@ mandatory:
   - [XX-RESEARCH.md]  # If applicable
 
 reference:
+  - .planning/DECISIONS.md  # Architectural rationales — check before contradicting prior choices
   - [XX-SUMMARY.md]   # Frozen phase context
 ```
 </context_files>
