@@ -85,10 +85,10 @@ The project's memory. It's the only thing Claude needs to read to know exactly w
 
 ### The FSM · `fsm.py`
 
-A deterministic state machine. No "vibes," just transitions:
+A deterministic state machine. No "vibes", just transitions:
 `INIT → EXECUTE → VERIFY → COMPLETE`.
 
-* **IRON LOCK:** Opus tasks don't run on Sonnet. I don't let cheap models handle complex logic.
+* **IRON LOCK.** Manual protocol. Run `/clear` and use the assigned models. If you skip the sequence and it fails, don't complain.
 * **Verified Commit:** No `DONE` status without a passing test and a git commit.
 * **Circuit Breaker:** 3 failures and the bead is dead. Roll back and rethink.
 
@@ -148,7 +148,7 @@ Most frameworks ask for permission. Beads takes it. It uses shell hooks to block
 Because building an infrastructure for a failed idea is a waste of my time and your money. Prove the core function works in Phase 01 or kill the repo.
 
 **"Token savings?"**
-60-70%. We keep the context flat. 4K tokens per bead. Every time.
+60-70%. We keep the context flat. 4K tokens per bead (it may be not true). 
 
 ---
 
