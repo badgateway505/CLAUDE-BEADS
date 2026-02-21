@@ -2,7 +2,7 @@
 
 # Beads
 
-Claude is a chaotic mess of tokens and broken promises. I built Beads to put it in a cage and make it work.
+Test ideas quickly. Build only what survived.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
