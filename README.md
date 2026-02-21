@@ -53,7 +53,7 @@ My workflow is a closed loop. No drift, no excuses.
 
 ---
 
-## ◆ Get Started
+## 🔌 Get Started
 
 ### Installation
 
